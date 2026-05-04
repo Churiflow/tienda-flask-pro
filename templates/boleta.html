@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Boleta #{{ pedido.id }}</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; width: 300px; margin: auto; border: 1px solid #ccc; padding: 20px; }
+        .text-center { text-align: center; }
+        .divider { border-top: 1px dashed #000; margin: 10px 0; }
+        .total { font-weight: bold; font-size: 1.2em; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="text-center">
+        <h2>MI TIENDA PRO</h2>
+        <p>Venta Online</p>
+    </div>
+    <div class="divider"></div>
+    <p><strong>Pedido:</strong> #{{ pedido.id }}</p>
+    <p><strong>Fecha:</strong> {{ pedido.fecha.strftime('%d/%m/%Y %H:%M') }}</p>
+    <p><strong>Cliente:</strong> {{ pedido.nombre_cliente }}</p>
+    <div class="divider"></div>
+    <p><strong>Productos:</strong><br>{{ pedido.productos_nombres }}</p>
+    <div class="divider"></div>
+    <p class="total text-center">TOTAL PAGADO: ${{ pedido.total_pagado }}</p>
+    <div class="divider"></div>
+    <p class="text-center">¡Gracias por su compra!</p>
+    
+    <div class="no-print text-center">
+        <button onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        <br><br>
+        <a href="/admin">Volver al Panel</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TiendaMaster Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">🚀 TiendaMaster</a>
+            <div class="d-flex align-items-center">
+                <a href="/admin" class="btn btn-outline-warning me-2 btn-sm">Admin</a>
+                <!-- Link correcto al carrito -->
+                <a href="/carrito" class="btn btn-primary position-relative">
+                    🛒 Carrito
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ cantidad }}
+                    </span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- BUSCADOR -->
+        <form action="/" method="GET" class="mb-4 d-flex">
+            <input type="text" name="search" class="form-control me-2" placeholder="Buscar producto...">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+
+        <div class="container mt-4 text-center">
+            <div class="btn-group" role="group">
+                <a href="/" class="btn btn-outline-dark">Todos</a>
+                <a href="/categoria/Zapatillas" class="btn btn-outline-dark">Zapatillas</a>
+                <a href="/categoria/Ropa" class="btn btn-outline-dark">Ropa</a>
+                <a href="/categoria/Accesorios" class="btn btn-outline-dark">Accesorios</a>
+            </div>
+        </div>
+        
+
+        <h2 class="text-center mb-4">Catálogo de Productos</h2>
+        <div class="row">
+            {% for p in productos %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <img src="{{ p.imagen }}" class="card-img-top" alt="{{ p.nombre }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">{{ p.nombre }}</h5>
+                        <p class="card-text text-muted small">{{ p.descripcion }}</p>
+                        <p class="h5 text-primary">${{ p.precio }}</p>
+                        
+                        <!-- BOTÓN AÑADIR (Aquí sí funciona 'p') -->
+                        <a href="/agregar/{{ p.id }}" class="btn btn-success w-100">Añadir al Carrito</a>
+                        
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

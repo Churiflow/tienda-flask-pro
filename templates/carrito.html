@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Carrito - TiendaMaster</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">🏠 Volver a la Tienda</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="mb-4">🛒 Tu Carrito de Compras</h2>
+
+        {% if productos %}
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <ul class="list-group list-group-flush">
+                        {% for p in productos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ p.imagen }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px;" class="rounded">
+                                <div>
+                                    <h6 class="mb-0">{{ p.nombre }}</h6>
+                                    <small class="text-muted">${{ p.precio }}</small>
+                                </div>
+                            </div>
+                            <a href="/quitar/{{ p.id }}" class="btn btn-sm btn-outline-danger">Quitar</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm p-3">
+                    <h4>Resumen</h4>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Total:</span>
+                        <span class="h4 text-success">${{ total }}</span>
+                    </div>
+                    <a href="/finalizar_compra" class="btn btn-success btn-lg w-100">Finalizar Compra y Pagar</a>
+                    <a href="/vaciar" class="btn btn-link btn-sm w-100 mt-2 text-muted">Vaciar carrito</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <h3>Tu carrito está vacío 😱</h3>
+            <a href="/" class="btn btn-primary mt-3">Ir a comprar</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
