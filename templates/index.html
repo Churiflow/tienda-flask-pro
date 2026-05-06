@@ -8,18 +8,24 @@
 </head>
 <body class="bg-light">
     <!-- BARRA DE NAVEGACIÓN -->
-    <nav class="navbar navbar-dark bg-dark mb-4 shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">🚀 TiendaMaster</a>
-            <div class="d-flex align-items-center">
-                <a href="/admin" class="btn btn-outline-warning me-2 btn-sm">Admin</a>
-                <!-- Link correcto al carrito -->
-                <a href="/carrito" class="btn btn-primary position-relative">
-                    🛒 Carrito
+            <!-- Nombre de la Tienda a la izquierda -->
+            <a class="navbar-brand fw-bold" href="/">👟 TiendaMaster</a>
+    
+            <!-- Contenedor para el Carrito a la derecha -->
+            <div class="ms-auto d-flex align-items-center">
+                <a href="/carrito" class="btn btn-outline-light position-relative">
+                    🛒 Mi Carrito
+                    {% if cantidad > 0 %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                         {{ cantidad }}
                     </span>
+                    {% endif %}
                 </a>
+                
+                <!-- Enlace al Admin al lado del carrito -->
+                <a href="/admin" class="btn btn-sm btn-outline-secondary ms-3">⚙️ Admin</a>
             </div>
         </div>
     </nav>
@@ -39,7 +45,6 @@
                 <a href="/categoria/Accesorios" class="btn btn-outline-dark">Accesorios</a>
             </div>
         </div>
-        
 
         <h2 class="text-center mb-4">Catálogo de Productos</h2>
         <div class="row">
@@ -50,11 +55,20 @@
                     <div class="card-body text-center">
                         <h5 class="card-title">{{ p.nombre }}</h5>
                         <p class="card-text text-muted small">{{ p.descripcion }}</p>
-                        <p class="h5 text-primary">${{ p.precio }}</p>
-                        
-                        <!-- BOTÓN AÑADIR (Aquí sí funciona 'p') -->
-                        <a href="/agregar/{{ p.id }}" class="btn btn-success w-100">Añadir al Carrito</a>
-                        
+                        <p class="h5 text-primary mb-2">${{ p.precio }}</p>
+
+                        <!-- LOGICA DE STOCK AUTOMÁTICO -->
+                        <p class="small {% if p.stock > 0 %}text-success{% else %}text-danger fw-bold{% endif %}">
+                            Stock: {{ p.stock }} unid.
+                        </p>
+
+                        {% if p.stock > 0 %}
+                            <!-- BOTÓN ACTIVO -->
+                            <a href="/agregar/{{ p.id }}" class="btn btn-success w-100">Añadir al Carrito</a>
+                        {% else %}
+                            <!-- BOTÓN DESACTIVADO -->
+                            <button class="btn btn-secondary w-100" disabled>Agotado</button>
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -23,13 +23,14 @@
                         {% for p in productos %}
                         <li class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <div class="d-flex align-items-center">
-                                <img src="{{ p.imagen }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px;" class="rounded">
+                                <img src="{{ p.imagen }}" style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px;" class="rounded" onerror="this.src='https://via.placeholder.com/60'">
                                 <div>
                                     <h6 class="mb-0">{{ p.nombre }}</h6>
                                     <small class="text-muted">${{ p.precio }}</small>
                                 </div>
                             </div>
-                            <a href="/quitar/{{ p.id }}" class="btn btn-sm btn-outline-danger">Quitar</a>
+                            <!-- Ruta corregida para coincidir con app.py -->
+                            <a href="{{ url_for('quitar_del_carrito', id=p.id) }}" class="btn btn-sm btn-outline-danger">Quitar</a>
                         </li>
                         {% endfor %}
                     </ul>
