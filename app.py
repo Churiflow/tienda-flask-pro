@@ -6,6 +6,9 @@ from flask import send_file
 import os
 import datetime
 
+import csv
+from flask import Response
+from io import StringIO
 
 app = Flask(__name__)
 app.secret_key = 'mi_clave_secreta_pro_2026'
@@ -173,10 +176,6 @@ def ver_carrito():
 
 # Para esta funcion se instalo Fpdf arriba esta la imorotacion
 
-from fpdf import FPDF
-from flask import send_file
-import datetime
-
 @app.route('/descargar_ticket')
 def descargar_ticket():
     # 1. El Robot busca el ÚLTIMO pedido que se guardó en la base de datos
@@ -244,7 +243,32 @@ def descargar_ticket():
     
     return send_file(nombre_pdf, as_attachment=True)
 
+
+
+@app.route('/admin/exportar_ventas')
+def exportar_ventas():
+    # 1. El Agente recolecta todos los pedidos de la base de datos
+    pedidos = Pedido.query.all()
     
+    # 2. Creamos un "archivo virtual" en memoria
+    si = StringIO()
+    cw = csv.writer(si)
+    
+    # 3. Escribimos la cabecera del reporte
+    cw.writerow(['ID Pedido', 'Productos', 'Total Pagado'])
+    
+    # 4. El Robot recorre cada pedido y lo anota en el archivo
+    for p in pedidos:
+        cw.writerow([p.id, p.productos_nombres, p.total_pagado])
+    
+    # 5. Preparamos la respuesta para que el navegador lo descargue
+    output = si.getvalue()
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=reporte_ventas_2026.csv"}
+    )
+
     
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
