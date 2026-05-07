@@ -75,21 +75,35 @@ def vaciar_carrito():
 def finalizar_compra():
     ids = session.get('carrito', [])
     if not ids: return redirect(url_for('home'))
-    
+
+    # 1. Buscamos los productos (Tu lógica actual)
     productos_obj = Producto.query.filter(Producto.id.in_(ids)).all()
-    # Descontar stock
+    
+    # 2. Descontar stock (Tu lógica actual)
     for p in productos_obj:
         if p.stock > 0:
             p.stock -= 1
-    
+
+    # 3. Preparar datos para el pedido (Tu lógica actual)
     nombres = ", ".join([p.nombre for p in productos_obj])
     total = sum(p.precio for p in productos_obj)
-    
+
+    # 4. Guardar en la base de datos (Tu lógica actual)
     nuevo_pedido = Pedido(productos_nombres=nombres, total_pagado=total)
     db.session.add(nuevo_pedido)
     db.session.commit()
+    # --- AQUÍ EMPIEZA LO NUEVO SIN BORRAR LO ANTERIOR ---
+
+    # 5. Creamos el mensaje para WhatsApp
+    # Usamos .replace(" ", "%20") porque los links no aceptan espacios en blanco
+    texto = f"¡Hola! He realizado una compra. Productos: {nombres}. Total a pagar: ${total}"
+    mensaje_wa = texto.replace(" ", "%20")
+
+    # 6. Limpiamos el carrito (Tu lógica actual)
     session.pop('carrito', None)
-    return render_template('pago_exitoso.html', nombres=nombres, total=total)
+
+    # 7. Enviamos TODO a la página de éxito, incluyendo el nuevo 'mensaje'
+    return render_template('pago_exitoso.html', nombres=nombres, total=total, mensaje=mensaje_wa)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
