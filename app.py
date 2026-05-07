@@ -1,6 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 
+from fpdf import FPDF
+from flask import send_file
+import os
+import datetime
+
+
 app = Flask(__name__)
 app.secret_key = 'mi_clave_secreta_pro_2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tienda.db'
@@ -165,5 +171,80 @@ def ver_carrito():
     total = sum(p.precio for p in productos_carrito)
     return render_template('carrito.html', productos=productos_carrito, total=total)
 
+# Para esta funcion se instalo Fpdf arriba esta la imorotacion
+
+from fpdf import FPDF
+from flask import send_file
+import datetime
+
+@app.route('/descargar_ticket')
+def descargar_ticket():
+    # 1. El Robot busca el ÚLTIMO pedido que se guardó en la base de datos
+    # 'total_pagado' debe coincidir con el nombre que tienes en tu clase Pedido
+    ultimo_pedido = Pedido.query.order_by(Pedido.id.desc()).first()
+
+    if not ultimo_pedido:
+        return "Error: No se encontró ningún pedido para generar la boleta.", 404
+
+    # 2. Configuración técnica del PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # --- DISEÑO DE LA BOLETA ---
+    # Encabezado
+    pdf.set_font("Arial", 'B', 22)
+    pdf.set_text_color(0, 102, 204) # Azul Master
+    pdf.cell(190, 15, "TIENDA MASTER", 0, 1, 'C')
+    
+    pdf.set_font("Arial", 'I', 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(190, 5, "Comprobante de Venta Electrónico", 0, 1, 'C')
+    pdf.ln(10)
+
+    # Info del Cliente y Fecha
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(95, 10, f"Ticket Nro: #{ultimo_pedido.id}", 0, 0)
+    
+    fecha_envio = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    pdf.cell(95, 10, f"Fecha: {fecha_envio}", 0, 1, 'R')
+    pdf.line(10, 45, 200, 45) # Línea divisoria
+    pdf.ln(10)
+
+    # Detalle de Productos
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_fill_color(230, 230, 230)
+    pdf.cell(190, 10, "  DESCRIPCION DE PRODUCTOS", 0, 1, 'L', fill=True)
+    
+    pdf.set_font("Arial", '', 11)
+    # Aquí es donde el Robot escribe los nombres reales de la DB
+    # Usamos multi_cell por si la lista de nombres es muy larga
+    pdf.multi_cell(190, 10, f"{ultimo_pedido.productos_nombres}", border='LRB')
+    
+    pdf.ln(5)
+
+    # Bloque de Total
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(130, 12, "TOTAL PAGADO", 0, 0, 'R')
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_fill_color(40, 167, 69) # Verde éxito
+    # Aquí el Robot escribe el monto real: 'total_pagado'
+    pdf.cell(60, 12, f" $ {ultimo_pedido.total_pagado} ", 0, 1, 'C', fill=True)
+
+    # Pie de página RPA
+    pdf.ln(20)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.multi_cell(190, 5, "Este documento fue generado automáticamente por el Agente RPA de Tienda Master.\nGracias por su compra.", 0, 'C')
+
+    # 3. Generar y entregar el archivo
+    nombre_pdf = f"Boleta_TM_{ultimo_pedido.id}.pdf"
+    pdf.output(nombre_pdf)
+    
+    return send_file(nombre_pdf, as_attachment=True)
+
+    
+    
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

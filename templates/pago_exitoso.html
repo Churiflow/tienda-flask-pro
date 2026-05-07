@@ -2,28 +2,90 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Compra Exitosa</title>
+    <!-- CRUCIAL para que se vea bien en celular -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compra Exitosa - Tienda Master</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Iconos de Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f7f6; min-height: 100vh; display: flex; align-items: center; }
+        .ticket-card { border: none; border-radius: 20px; overflow: hidden; }
+        .dashed-line { border-top: 2px dashed #dee2e6; margin: 20px 0; }
+    </style>
 </head>
-<body class="bg-light d-flex align-items-center" style="height: 100vh text-center;">
-    <div class="container bg-white p-5 rounded shadow text-center" style="max-width: 500px;">
-        <h1 class="display-4 text-success">✅</h1>
-        <h2>¡Gracias por tu compra!</h2>
-        <div class="mt-4 text-center">
-            <!-- El número debe ir con código de país, por ejemplo 54 para Argentina, 56 para Chile, 57 Colombia, etc. -->
-            <a href="https://wa.me/+56993689737?text={{ mensaje }}" 
-               target="_blank" 
-               class="btn btn-success btn-lg shadow">
-                <i class="bi bi-whatsapp"></i> Confirmar pedido por WhatsApp
-            </a>
+<body>
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-5">
+                
+                <div class="card ticket-card shadow-lg">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <!-- Encabezado -->
+                        <div class="text-center mb-4">
+                            <div class="display-4 text-success mb-2">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <h2 class="fw-bold text-primary">TIENDA MASTER</h2>
+                            <p class="text-muted small">Comprobante de Pago Digital</p>
+                        </div>
+
+                        <div class="dashed-line"></div>
+
+                        <!-- Info del Pedido -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small">Fecha:</span>
+                                <span class="fw-bold small">07/05/2026</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Estado:</span>
+                                <span class="badge bg-success-subtle text-success border border-success">PAGADO</span>
+                            </div>
+                        </div>
+
+                        <!-- Resumen -->
+                        <div class="bg-light p-3 rounded-3 mb-4">
+                            <h6 class="fw-bold text-uppercase small text-muted mb-3">Resumen de Compra</h6>
+                            <p class="mb-1 fw-semibold text-dark">{{ nombres }}</p>
+                            <div class="dashed-line"></div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0 text-muted">Total:</span>
+                                <span class="h3 mb-0 text-primary fw-bold">${{ total }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="d-grid gap-3">
+                            <!-- Botón WhatsApp -->
+                            <a href="https://wa.me/56993689737?text={{ mensaje }}" 
+                               target="_blank" 
+                               class="btn btn-success btn-lg shadow-sm py-3 fw-bold">
+                                <i class="bi bi-whatsapp me-2"></i>Confirmar pedido
+                            </a>
+                            
+                            <!-- Botón PDF (Agente RPA) -->
+                            <a href="/descargar_ticket" class="btn btn-outline-dark py-2">
+                                <i class="bi bi-file-earmark-pdf me-2"></i>Descargar Boleta PDF
+                            </a>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <a href="/" class="text-decoration-none text-muted small">
+                                <i class="bi bi-arrow-left"></i> Volver a la tienda
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <p class="text-center text-muted mt-4 small">
+                    Tu pedido ha sido registrado con el ID: #{{ range(1000, 9999) | random }}
+                </p>
+
+            </div>
         </div>
-        <p class="lead">Tu pedido ha sido registrado con éxito.</p>
-        <div class="alert alert-secondary text-start">
-            <strong>Resumen:</strong><br>
-            {{ nombres }}<br>
-            <strong>Total:</strong> ${{ total }}
-        </div>
-        <a href="/" class="btn btn-primary w-100">Volver al Inicio</a>
     </div>
 </body>
 </html>
