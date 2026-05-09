@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from fpdf import FPDF
 from flask import send_file
 import os
-import datetime
+from datetime import datetime
 
 import csv
 from flask import Response
@@ -29,11 +29,11 @@ class Producto(db.Model):
 
 class Pedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    productos_nombres = db.Column(db.String(500))
-    total_pagado = db.Column(db.Integer)
-    fecha = db.Column(db.DateTime, default=db.func.now())
+    productos_nombres = db.Column(db.String(500), nullable=False)
+    total_pagado = db.Column(db.Float, nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.now)
 
-with app.app_context():
+with     app.app_context():
     db.create_all()
 
 # --- RUTAS ---
@@ -206,7 +206,7 @@ def descargar_ticket():
     pdf.set_text_color(0, 0, 0)
     pdf.cell(95, 10, f"Ticket Nro: #{ultimo_pedido.id}", 0, 0)
     
-    fecha_envio = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    fecha_envio = datetime.now().strftime("%d/%m/%Y %H:%M")
     pdf.cell(95, 10, f"Fecha: {fecha_envio}", 0, 1, 'R')
     pdf.line(10, 45, 200, 45) # Línea divisoria
     pdf.ln(10)
@@ -244,29 +244,26 @@ def descargar_ticket():
     return send_file(nombre_pdf, as_attachment=True)
 
 
-
 @app.route('/admin/exportar_ventas')
 def exportar_ventas():
-    # 1. El Agente recolecta todos los pedidos de la base de datos
     pedidos = Pedido.query.all()
-    
-    # 2. Creamos un "archivo virtual" en memoria
     si = StringIO()
     cw = csv.writer(si)
     
-    # 3. Escribimos la cabecera del reporte
-    cw.writerow(['ID Pedido', 'Productos', 'Total Pagado'])
+    # Cabecera profesional
+    cw.writerow(['ID Pedido', 'Fecha y Hora', 'Productos', 'Total Pagado'])
     
-    # 4. El Robot recorre cada pedido y lo anota en el archivo
     for p in pedidos:
-        cw.writerow([p.id, p.productos_nombres, p.total_pagado])
+        # Formateamos la fecha: 08/05/2026 19:45
+        fecha_str = p.fecha.strftime("%d/%m/%Y %H:%M") if p.fecha else "Sin Fecha"
+        
+        cw.writerow([p.id, fecha_str, p.productos_nombres, f"${p.total_pagado:,.2f}"])
     
-    # 5. Preparamos la respuesta para que el navegador lo descargue
     output = si.getvalue()
     return Response(
         output,
         mimetype="text/csv",
-        headers={"Content-disposition": "attachment; filename=reporte_ventas_2026.csv"}
+        headers={"Content-disposition": "attachment; filename=reporte_ventas_pro.csv"}
     )
 
     
