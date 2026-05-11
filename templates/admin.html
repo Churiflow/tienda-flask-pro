@@ -160,6 +160,31 @@
                     </div>
                 </div>
 
+                <div class="card shadow-sm mb-5">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">✨ Gestionar Carrusel (Banners)</h4>
+                    </div>
+                    <div class="card-body">
+                        <form action="/admin/banner" method="POST">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Título del Banner</label>
+                                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Ofertas de Verano" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Subtítulo (Descripción corta)</label>
+                                    <input type="text" name="subtitulo" class="form-control" placeholder="Ej: 20% de descuento en todo" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">URL de la Imagen</label>
+                                    <input type="url" name="imagen_url" class="form-control" placeholder="https://enlace-de-tu-foto.jpg" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Publicar en el Carrusel</button>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="card p-3 shadow-sm">
                     <h4>📋 Historial de Pedidos</h4>
                     <div class="table-responsive">

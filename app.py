@@ -30,6 +30,12 @@ class Producto(db.Model):
     stock = db.Column(db.Integer, default=10)
     imagen = db.Column(db.String(500), default="https://via.placeholder.com/150")
 
+class Banner(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    imagen_url = db.Column(db.String(300), nullable=False)
+    titulo = db.Column(db.String(100))
+    subtitulo = db.Column(db.String(200))
+
 class Pedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     productos_nombres = db.Column(db.String(500), nullable=False)
@@ -46,7 +52,8 @@ def home():
     query = request.args.get('search')
     productos_db = Producto.query.filter(Producto.nombre.contains(query)).all() if query else Producto.query.all()
     cantidad_carrito = len(session.get('carrito', []))
-    return render_template('index.html', productos=productos_db, cantidad=cantidad_carrito)
+    banners = Banner.query.all() # Traemos todos los banners de la BD
+    return render_template('index.html', productos=productos_db, cantidad=cantidad_carrito,banners=banners)
 
 
 @app.route('/categoria/<nombre_cat>')
@@ -284,6 +291,21 @@ def rastreo():
         if not pedido:
             error = "No encontramos un pedido con ese ID. Verifica el número."
     return render_template('rastreo.html', pedido=pedido, error=error)
+
+
+@app.route('/admin/banner', methods=['POST'])
+def agregar_banner():
+    # Solo si el usuario está logueado (si ya tienes login implementado)
+    titulo = request.form.get('titulo')
+    subtitulo = request.form.get('subtitulo')
+    imagen_url = request.form.get('imagen_url')
+    
+    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url)
+    db.session.add(nuevo_banner)
+    db.session.commit()
+    
+    flash("¡Banner agregado con éxito!", "success")
+    return redirect(url_for('admin')) # O la ruta de tu panel
 
     
 if __name__ == '__main__':
