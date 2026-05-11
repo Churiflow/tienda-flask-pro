@@ -10,6 +10,8 @@ import csv
 from flask import Response
 from io import StringIO
 
+from flask import flash # Asegúrate de que esté importado arriba
+
 app = Flask(__name__)
 app.secret_key = 'mi_clave_secreta_pro_2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tienda.db'
@@ -26,12 +28,14 @@ class Producto(db.Model):
     imagen = db.Column(db.String(500))
     categoria = db.Column(db.String(50))
     stock = db.Column(db.Integer, default=10)
+    imagen = db.Column(db.String(500), default="https://via.placeholder.com/150")
 
 class Pedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     productos_nombres = db.Column(db.String(500), nullable=False)
     total_pagado = db.Column(db.Float, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.now)
+    estado = db.Column(db.String(20), default='Pendiente')
 
 with     app.app_context():
     db.create_all()
@@ -102,7 +106,8 @@ def finalizar_compra():
     db.session.add(nuevo_pedido)
     db.session.commit()
     # --- AQUÍ EMPIEZA LO NUEVO SIN BORRAR LO ANTERIOR ---
-
+    # ESTO ES LO NUEVO: Enviamos el ID al cartel de notificación
+    flash(f"¡Compra exitosa! Tu número de pedido es el #{nuevo_pedido.id}. Úsalo en la sección de Rastreo.", "success")
     # 5. Creamos el mensaje para WhatsApp
     # Usamos .replace(" ", "%20") porque los links no aceptan espacios en blanco
     texto = f"¡Hola! He realizado una compra. Productos: {nombres}. Total a pagar: ${total}"
@@ -150,11 +155,13 @@ def eliminar_producto(id):
     db.session.commit()
     return redirect(url_for('admin'))
 
-@app.route('/eliminar_pedido/<int:id>')
-def eliminar_pedido(id):
-    ped = Pedido.query.get_or_404(id)
-    db.session.delete(ped)
-    db.session.commit()
+@app.route('/despachar/<int:id>')
+def despachar_pedido(id):
+    if not session.get('admin_logueado'): return redirect(url_for('login'))
+    pedido = Pedido.query.get(id)
+    if pedido:
+        pedido.estado = 'Despachado' # Cambiamos el estado en lugar de borrarlo
+        db.session.commit()
     return redirect(url_for('admin'))
 
 @app.route('/imprimir_boleta/<int:id>')
@@ -265,6 +272,18 @@ def exportar_ventas():
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=reporte_ventas_pro.csv"}
     )
+
+
+@app.route('/rastreo', methods=['GET', 'POST'])
+def rastreo():
+    pedido = None
+    error = None
+    if request.method == 'POST':
+        id_buscado = request.form.get('pedido_id')
+        pedido = Pedido.query.get(id_buscado)
+        if not pedido:
+            error = "No encontramos un pedido con ese ID. Verifica el número."
+    return render_template('rastreo.html', pedido=pedido, error=error)
 
     
 if __name__ == '__main__':

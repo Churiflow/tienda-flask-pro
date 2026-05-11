@@ -104,6 +104,7 @@
                                 <tr>
                                     <td>{{ producto.nombre }}</td>
                                     <td>${{ producto.precio }}</td>
+                                    <td><img src="{{ producto.imagen }}" width="40" style="border-radius: 5px;"></td>
                                     <td>
                                         {% if producto.stock > 3 %}
                                             <span class="badge bg-success">{{ producto.stock }} unid.</span>
@@ -179,7 +180,7 @@
                                     <td class="text-success fw-bold">${{ pedido.total_pagado }}</td>
                                     <td>
                                         <a href="{{ url_for('imprimir_boleta', id=pedido.id) }}" class="btn btn-sm btn-info" target="_blank">📄 Boleta</a>
-                                        <a href="{{ url_for('eliminar_pedido', id=pedido.id) }}" class="btn btn-sm btn-outline-success">✅ Despachar</a>
+                                        <a href="{{ url_for('despachar_pedido', id=pedido.id) }}" class="btn btn-sm btn-outline-success">✅ Despachar</a>
                                     </td>
                                 </tr>
                                 {% else %}

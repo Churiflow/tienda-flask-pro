@@ -26,6 +26,12 @@
                 
                 <!-- Enlace al Admin al lado del carrito -->
                 <a href="/admin" class="btn btn-sm btn-outline-secondary ms-3">⚙️ Admin</a>
+                <!-- Eblace a rastreo del pedido -->
+                <li class="nav-item">
+                    <a class="nav-link fw-bold text-primary" href="/rastreo">
+                        <i class="bi bi-box-seam"></i> Rastrear Pedido
+                    </a>
+                </li>
             </div>
         </div>
     </nav>
@@ -45,7 +51,18 @@
                 <a href="/categoria/Accesorios" class="btn btn-outline-dark">Accesorios</a>
             </div>
         </div>
-
+        <div class="container mt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+        </div>
         <h2 class="text-center mb-4">Catálogo de Productos</h2>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
             {% for p in productos %}
