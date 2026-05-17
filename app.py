@@ -36,6 +36,13 @@ class Banner(db.Model):
     titulo = db.Column(db.String(100))
     subtitulo = db.Column(db.String(200))
 
+class Cupon(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False) # Ej: "OFERTA10"
+    descuento = db.Column(db.Integer, nullable=False) # Porcentaje, ej: 10
+    activo = db.Column(db.Boolean, default=True)
+
+
 class Pedido(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     productos_nombres = db.Column(db.String(500), nullable=False)
@@ -98,7 +105,7 @@ def finalizar_compra():
 
     # 1. Buscamos los productos (Tu lógica actual)
     productos_obj = Producto.query.filter(Producto.id.in_(ids)).all()
-    
+
     # 2. Descontar stock (Tu lógica actual)
     for p in productos_obj:
         if p.stock > 0:
@@ -106,25 +113,35 @@ def finalizar_compra():
 
     # 3. Preparar datos para el pedido (Tu lógica actual)
     nombres = ", ".join([p.nombre for p in productos_obj])
-    total = sum(p.precio for p in productos_obj)
+    total_base = sum(p.precio for p in productos_obj)
 
-    # 4. Guardar en la base de datos (Tu lógica actual)
-    nuevo_pedido = Pedido(productos_nombres=nombres, total_pagado=total)
+    # --- CALCULAMOS EL DESCUENTO Y REDONDEAMOS A ENTERO ---
+    porcentaje = session.get('porcentaje_descuento', 0)
+    
+    # Usamos int() y round() para fulminar los decimales
+    ahorro = int(round((total_base * porcentaje) / 100))
+    total_final = total_base - ahorro # Ahora este número siempre será un entero exacto
+
+    # 4. Guardar en la base de datos
+    nuevo_pedido = Pedido(productos_nombres=nombres, total_pagado=total_final)
+
     db.session.add(nuevo_pedido)
     db.session.commit()
-    # --- AQUÍ EMPIEZA LO NUEVO SIN BORRAR LO ANTERIOR ---
+
     # ESTO ES LO NUEVO: Enviamos el ID al cartel de notificación
     flash(f"¡Compra exitosa! Tu número de pedido es el #{nuevo_pedido.id}. Úsalo en la sección de Rastreo.", "success")
-    # 5. Creamos el mensaje para WhatsApp
-    # Usamos .replace(" ", "%20") porque los links no aceptan espacios en blanco
-    texto = f"¡Hola! He realizado una compra. Productos: {nombres}. Total a pagar: ${total}"
+    
+    # 5. Creamos el mensaje para WhatsApp (Con el total_final descontado)
+    texto = f"¡Hola! He realizado una compra. Productos: {nombres}. Total a pagar: ${total_final}"
     mensaje_wa = texto.replace(" ", "%20")
 
-    # 6. Limpiamos el carrito (Tu lógica actual)
+    # 6. Limpiamos el carrito Y TAMBIÉN EL CUPÓN (Para que no se quede guardado en su próxima compra)
     session.pop('carrito', None)
+    session.pop('porcentaje_descuento', None) # <-- ¡Muy importante limpiar el cupón aquí!
 
-    # 7. Enviamos TODO a la página de éxito, incluyendo el nuevo 'mensaje'
-    return render_template('pago_exitoso.html', nombres=nombres, total=total, mensaje=mensaje_wa)
+    # 7. Enviamos TODO a la página de éxito
+    return render_template('pago_exitoso.html', nombres=nombres, total=total_final, mensaje=mensaje_wa)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -174,7 +191,13 @@ def despachar_pedido(id):
 @app.route('/imprimir_boleta/<int:id>')
 def imprimir_boleta(id):
     pedido = Pedido.query.get_or_404(id)
-    return render_template('boleta.html', pedido=pedido)
+    
+    # Si quieres calcular cuánto se ahorró para mostrarlo en el HTML:
+    # Nota: Esto asume que los precios de los productos no han cambiado desde que se hizo el pedido.
+    # Como ya guardaste el total_final en 'pedido.total_pagado', la boleta ya imprimirá el monto correcto por defecto.
+    
+    return render_template('boleta.html', pedido=pedido)    
+
 
 @app.route('/logout')
 def logout():
@@ -183,10 +206,51 @@ def logout():
 
 @app.route('/carrito')
 def ver_carrito():
-    ids = session.get('carrito', [])
-    productos_carrito = Producto.query.filter(Producto.id.in_(ids)).all()
-    total = sum(p.precio for p in productos_carrito)
-    return render_template('carrito.html', productos=productos_carrito, total=total)
+    carrito = session.get('carrito', [])
+    productos = Producto.query.filter(Producto.id.in_(carrito)).all()
+    
+    total_base = sum(p.precio for p in productos)
+    
+    porcentaje = session.get('porcentaje_descuento', 0)
+    
+    # Redondeamos aquí también antes de enviarlo al HTML
+    ahorro = int(round((total_base * porcentaje) / 100))
+    total_final = total_base - ahorro
+    
+    return render_template('carrito.html', 
+                           productos=productos, 
+                           total=total_base,      
+                           ahorro=ahorro,         
+                           total_final=total_final, 
+                           cantidad=len(carrito))
+
+@app.route('/aplicar_cupon', methods=['POST'])
+def aplicar_cupon():
+    codigo_ingresado = request.form.get('codigo_cupon').upper().strip()
+    # Buscamos el cupón que coincida y que esté activo
+    cupon = Cupon.query.filter_by(codigo=codigo_ingresado, activo=True).first()
+
+    if cupon:
+        session['porcentaje_descuento'] = cupon.descuento
+        flash(f"¡Cupón '{codigo_ingresado}' aplicado! Descuento del {cupon.descuento}%", "success")
+    else:
+        session.pop('porcentaje_descuento', None) # Quitamos cualquier descuento previo
+        flash("Cupón no válido o expirado", "danger")
+    
+    return redirect(url_for('ver_carrito'))
+
+
+@app.route('/admin/crear_cupon', methods=['POST'])
+def crear_cupon():
+    codigo = request.form.get('codigo').upper().strip()
+    descuento = int(request.form.get('descuento'))
+    
+    nuevo_cupon = Cupon(codigo=codigo, descuento=descuento)
+    db.session.add(nuevo_cupon)
+    db.session.commit()
+    
+    flash(f"Cupón {codigo} creado con éxito", "success")
+    return redirect(url_for('admin')) 
 
 # Para esta funcion se instalo Fpdf arriba esta la imorotacion
 
@@ -243,8 +307,10 @@ def descargar_ticket():
     pdf.set_text_color(255, 255, 255)
     pdf.set_fill_color(40, 167, 69) # Verde éxito
     # Aquí el Robot escribe el monto real: 'total_pagado'
-    pdf.cell(60, 12, f" $ {ultimo_pedido.total_pagado} ", 0, 1, 'C', fill=True)
-
+    # --- AQUÍ CONVERTIMOS A ENTERO PARA QUITAR EL SECTOR DECIMAL ---
+    total_entero = int(ultimo_pedido.total_pagado)
+    pdf.cell(60, 12, f" $ {total_entero} ", 0, 1, 'C', fill=True)
+    
     # Pie de página RPA
     pdf.ln(20)
     pdf.set_font("Arial", 'I', 8)
