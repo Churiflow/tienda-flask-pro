@@ -55,22 +55,18 @@ class Pedido(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.now)
     estado = db.Column(db.String(20), default='Pendiente')
 
-with     app.app_context():
+with app.app_context():
     db.create_all()
 
-# --- RUTAS ---
 @app.route('/')
 def home():
-    # 1. Capturamos todos los posibles filtros desde la URL
     query = request.args.get('search')
     categoria_filtrada = request.args.get('categoria')
     subcategoria_filtrada = request.args.get('subcategoria')
     genero_filtrado = request.args.get('genero')
 
-    # 2. Iniciamos la consulta base sobre la tabla Producto
     consulta = Producto.query
 
-    # 3. Aplicamos los filtros acumulativos si existen
     if query:
         consulta = consulta.filter(Producto.nombre.contains(query))
     if categoria_filtrada:
@@ -80,14 +76,25 @@ def home():
     if genero_filtrado:
         consulta = consulta.filter_by(genero=genero_filtrado)
 
-    # 4. Traemos los productos finales filtrados
     productos_db = consulta.all()
-    
-    # 5. Mantenemos tu lógica de carrito y banners intacta
     cantidad_carrito = len(session.get('carrito', []))
     banners = Banner.query.all() 
+
+    # --- TRUCO MAGISTRAL: Extraemos listas únicas de lo que ya tienes guardado ---
+    # Esto busca en la BD y arma una lista sin repetir de todas las categorías y subcategorías que existen
+    categorias_existentes = db.session.query(Producto.categoria).distinct().all()
+    subcategorias_existentes = db.session.query(Producto.subcategoria).distinct().all()
     
-    return render_template('index.html', productos=productos_db, cantidad=cantidad_carrito, banners=banners)
+    # Las limpiamos para que Jinja las entienda bien (convertimos tuplas a strings)
+    cats = [c[0] for c in categorias_existentes if c[0]]
+    subcats = [s[0] for s in subcategorias_existentes if s[0]]
+
+    return render_template('index.html', 
+                           productos=productos_db, 
+                           cantidad=cantidad_carrito, 
+                           banners=banners,
+                           lista_categorias=cats,
+                           lista_subcategorias=subcats)
 
 @app.route('/categoria/<nombre_cat>')
 def filtrar_categoria(nombre_cat):

@@ -68,36 +68,24 @@
 
                         <div class="mb-2">
                             <label class="form-label text-muted small">Categoría Principal</label>
-                            <select name="categoria" class="form-select" required>
-                                <option value="Calzado">👟 Calzado</option>
-                                <option value="Ropa">👕 Ropa</option>
-                                <option value="Perfumeria">✨ Perfumería</option>
-                                <option value="Accesorios">🎒 Accesorios</option>
-                            </select>
+                            <input type="text" name="categoria" class="form-control" placeholder="Ej: Ropa, Perfumeria, Accesorios, Deportes" required>
                         </div>
-
+                        
                         <div class="mb-2">
-                            <label class="form-label text-muted small">Subcategoría (Tipo)</label>
-                            <select name="subcategoria" class="form-select" required>
-                                <option value="Zapatillas">Zapatillas</option>
-                                <option value="Sandalias">Sandalias</option>
-                                <option value="Shorts">Shorts</option>
-                                <option value="Pantalones">Pantalones</option>
-                                <option value="Boxers">Boxers / Ropa Interior</option>
-                                <option value="Gorras">Gorras</option>
-                                <option value="Medias">Medias / Calcetines</option>
-                                <option value="Perfume">Perfume</option>
-                            </select>
+                            <label class="form-label text-muted small">Subcategoría (Tipo de Producto)</label>
+                            <input type="text" name="subcategoria" class="form-control" placeholder="Ej: Poleras, Jeans, Boxers, Gorras, Relojes, Cremas" required>
                         </div>
-
+                        
                         <div class="mb-3">
                             <label class="form-label text-muted small">Público / Género</label>
                             <select name="genero" class="form-select" required>
                                 <option value="Unisex">Unisex 👥</option>
                                 <option value="Hombre">Hombre 👨</option>
                                 <option value="Mujer">Mujer 👩</option>
+                                <option value="Niños">Niños 👶</option>
                             </select>
                         </div>
+
                         <button type="submit" class="btn btn-primary w-100">🚀 Guardar en el Catálogo</button>
                     </form>
                 </div>
