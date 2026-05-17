@@ -25,10 +25,15 @@ class Producto(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Integer, nullable=False)
     descripcion = db.Column(db.String(500))
-    imagen = db.Column(db.String(500))
-    categoria = db.Column(db.String(50))
     stock = db.Column(db.Integer, default=10)
+    
+    # Fusionamos las dos líneas de imagen en una sola que SÍ tiene el valor por defecto
     imagen = db.Column(db.String(500), default="https://via.placeholder.com/150")
+    
+    # --- COLUMNAS PARA MÚLTIPLES SECCIONES (Tienda Grande) ---
+    categoria = db.Column(db.String(50), nullable=False, default="Calzado")       # Ej: Calzado, Ropa, Perfumeria, Accesorios
+    subcategoria = db.Column(db.String(50), nullable=False, default="Zapatillas") # Ej: Shorts, Pantalones, Boxers, Gorras, Sandalias
+    genero = db.Column(db.String(20), nullable=False, default="Unisex")           # Ej: Hombre, Mujer, Unisex
 
 class Banner(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,12 +61,33 @@ with     app.app_context():
 # --- RUTAS ---
 @app.route('/')
 def home():
+    # 1. Capturamos todos los posibles filtros desde la URL
     query = request.args.get('search')
-    productos_db = Producto.query.filter(Producto.nombre.contains(query)).all() if query else Producto.query.all()
-    cantidad_carrito = len(session.get('carrito', []))
-    banners = Banner.query.all() # Traemos todos los banners de la BD
-    return render_template('index.html', productos=productos_db, cantidad=cantidad_carrito,banners=banners)
+    categoria_filtrada = request.args.get('categoria')
+    subcategoria_filtrada = request.args.get('subcategoria')
+    genero_filtrado = request.args.get('genero')
 
+    # 2. Iniciamos la consulta base sobre la tabla Producto
+    consulta = Producto.query
+
+    # 3. Aplicamos los filtros acumulativos si existen
+    if query:
+        consulta = consulta.filter(Producto.nombre.contains(query))
+    if categoria_filtrada:
+        consulta = consulta.filter_by(categoria=categoria_filtrada)
+    if subcategoria_filtrada:
+        consulta = consulta.filter_by(subcategoria=subcategoria_filtrada)
+    if genero_filtrado:
+        consulta = consulta.filter_by(genero=genero_filtrado)
+
+    # 4. Traemos los productos finales filtrados
+    productos_db = consulta.all()
+    
+    # 5. Mantenemos tu lógica de carrito y banners intacta
+    cantidad_carrito = len(session.get('carrito', []))
+    banners = Banner.query.all() 
+    
+    return render_template('index.html', productos=productos_db, cantidad=cantidad_carrito, banners=banners)
 
 @app.route('/categoria/<nombre_cat>')
 def filtrar_categoria(nombre_cat):
@@ -153,7 +179,9 @@ def login():
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    if not session.get('admin_logueado'): return redirect(url_for('login'))
+    if not session.get('admin_logueado'): 
+        return redirect(url_for('login'))
+        
     if request.method == 'POST':
         nuevo = Producto(
             nombre=request.form['nombre'],
@@ -161,12 +189,17 @@ def admin():
             descripcion=request.form['descripcion'],
             imagen=request.form['imagen'],
             categoria=request.form['categoria'],
+            # --- NUEVOS CAMPOS ADAPTADOS A TU FORMULARIO ---
+            subcategoria=request.form['subcategoria'],
+            genero=request.form['genero'],
+            # -----------------------------------------------
             stock=int(request.form.get('stock', 10))
         )
         db.session.add(nuevo)
         db.session.commit()
+        flash("¡Producto añadido con éxito a las nuevas secciones!", "success")
         return redirect(url_for('admin'))
-    
+
     productos = Producto.query.all()
     pedidos = Pedido.query.all()
     recaudacion = sum(p.total_pagado for p in pedidos) if pedidos else 0
