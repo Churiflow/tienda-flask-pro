@@ -2,11 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- CRUCIAL para que se vea bien en celular -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compra Exitosa - Tienda Master</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Iconos de Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body { background-color: #f4f7f6; min-height: 100vh; display: flex; align-items: center; }
@@ -18,11 +16,10 @@
     <div class="container py-4">
         <div class="row justify-content-center">
             <div class="col-12 col-md-8 col-lg-5">
-                
+
                 <div class="card ticket-card shadow-lg">
                     <div class="card-body p-4 p-md-5">
-                        
-                        <!-- Encabezado -->
+
                         <div class="text-center mb-4">
                             <div class="display-4 text-success mb-2">
                                 <i class="bi bi-check-circle-fill"></i>
@@ -31,9 +28,25 @@
                             <p class="text-muted small">Comprobante de Pago Digital</p>
                         </div>
 
+                        {% if metodo == 'Mercado Pago' %}
+                            <div class="alert alert-info text-center border-0 small mb-3" style="background-color: #e3f2fd; color: #009ee3; border-radius: 12px;">
+                                <i class="bi bi-shield-check me-1 fw-bold"></i> 
+                                Pago procesado y aprobado con éxito vía <strong>Mercado Pago</strong>.
+                            </div>
+                        {% endif %}
+
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                          {% if messages %}
+                            {% for category, message in messages %}
+                              <div class="alert alert-success text-center small py-2 border-0 mb-3" style="border-radius: 10px;">
+                                <i class="bi bi-bell-fill me-1"></i> {{ message }}
+                              </div>
+                            {% endfor %}
+                          {% endif %}
+                        {% endwith %}
+
                         <div class="dashed-line"></div>
 
-                        <!-- Info del Pedido -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted small">Fecha:</span>
@@ -45,7 +58,6 @@
                             </div>
                         </div>
 
-                        <!-- Resumen -->
                         <div class="bg-light p-3 rounded-3 mb-4">
                             <h6 class="fw-bold text-uppercase small text-muted mb-3">Resumen de Compra</h6>
                             <p class="mb-1 fw-semibold text-dark">{{ nombres }}</p>
@@ -56,18 +68,15 @@
                             </div>
                         </div>
 
-                        <!-- Botones de Acción -->
                         <div class="d-grid gap-3">
-                            <!-- Botón WhatsApp -->
-                            <a href="https://wa.me/56993689737?text={{ mensaje }}" 
-                               target="_blank" 
+                            <a href="https://wa.me/56993689737?text={{ mensaje }}"
+                               target="_blank"
                                class="btn btn-success btn-lg shadow-sm py-3 fw-bold">
-                                <i class="bi bi-whatsapp me-2"></i>Confirmar pedido
+                                 <i class="bi bi-whatsapp me-2"></i>Confirmar pedido
                             </a>
-                            
-                            <!-- Botón PDF (Agente RPA) -->
+
                             <a href="/descargar_ticket" class="btn btn-outline-dark py-2">
-                                <i class="bi bi-file-earmark-pdf me-2"></i>Descargar Boleta PDF
+                                 <i class="bi bi-file-earmark-pdf me-2"></i>Descargar Boleta PDF
                             </a>
                         </div>
 
@@ -79,9 +88,9 @@
 
                     </div>
                 </div>
-                
+
                 <p class="text-center text-muted mt-4 small">
-                    Tu pedido ha sido registrado con el ID: #{{ range(1000, 9999) | random }}
+                    Tu ticket ha sido verificado por el sistema de auditoría interna.
                 </p>
 
             </div>

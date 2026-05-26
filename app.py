@@ -173,7 +173,8 @@ def finalizar_compra():
     session.pop('porcentaje_descuento', None) # <-- ¡Muy importante limpiar el cupón aquí!
 
     # 7. Enviamos TODO a la página de éxito
-    return render_template('pago_exitoso.html', nombres=nombres, total=total_final, mensaje=mensaje_wa)
+    metodo_usado = session.pop('metodo_pago_utilizado', 'Directo')
+    return render_template('pago_exitoso.html', nombres=nombres, total=total_final, mensaje=mensaje_wa, metodo=metodo_usado)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -494,39 +495,38 @@ def procesar_pago_mercadopago():
     }
 
     try:
-        # En un entorno real con internet y llaves válidas, esto envía el pago:
-        # payment_response = sdk.payment().create(payment_data)
-        # pago = payment_response["response"]
-        
-        # Como estamos en desarrollo local simulemos que Mercado Pago nos dice "Aprobado":
-        pago_status = "approved" 
+        # Simulación de respuesta aprobada de Mercado Pago
+        pago_status = "approved"
         pago_id = "1234567890"
 
         if pago_status == "approved":
-            # 4. Guardamos la transacción de éxito en nuestro archivo de auditoría oculto
+            # 4. Guardamos primero la transacción en nuestro archivo de auditoría oculto
             with open(".auditoria_secreta.log", "a") as archivo_secreto:
                 archivo_secreto.write("=== NUEVA ORDEN MERCADO PAGO (SIMULACIÓN) ===\n")
                 archivo_secreto.write(f"ID TRANSACCIÓN: {pago_id}\n")
-                archivo_secreto.write(f"TITULAR: {nombre_titular}\n") # <- ¡Agrega esta línea!
+                archivo_secreto.write(f"TITULAR: {nombre_titular}\n")
                 archivo_secreto.write(f"CLIENTE: {email_cliente}\n")
                 archivo_secreto.write(f"MONTO PROCESADO: ${monto_total}\n")
                 archivo_secreto.write(f"TOKEN UTILIZADO: {token_tarjeta}\n")
                 archivo_secreto.write("ESTADO: APROBADO (Sandbox)\n")
                 archivo_secreto.write("=============================================\n\n")
 
-            # 5. Mensaje de éxito para el cliente y vaciamos el carrito de la sesión
-            flash("¡Pago aprobado con éxito a través de Mercado Pago!", "success")
-            session['carrito'] = [] # Limpia el carrito para que vuelva a estar vacío
-            
+            # ¡AQUÍ ESTÁ LA MAGIA! 
+            # Redirigimos DIRECTAMENTE a la función que procesa la base de datos, 
+            # descuenta el stock, limpia el carrito y renderiza la pantalla de éxito.
+            # NO vaciamos el carrito aquí para que la otra ruta pueda leerlo.
+            session['metodo_pago_utilizado'] = 'Mercado Pago'
+            return redirect(url_for('finalizar_compra'))
+
         else:
             flash("El pago fue rechazado por la pasarela.", "danger")
+            return redirect(url_for('ver_carrito'))
 
     except Exception as e:
         print(f"[ERROR] Error al procesar pago: {e}")
         flash("Ocurrió un error interno al conectar con la pasarela.", "danger")
+        return redirect(url_for('ver_carrito'))
 
-    # 6. Redirigimos al cliente de vuelta a la página principal de la tienda
-    return redirect('/')
 
     
 if __name__ == '__main__':

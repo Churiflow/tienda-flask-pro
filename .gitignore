@@ -3,3 +3,6 @@ instance/
 __pycache__/
 *.pyc
 .auditoria_secreta.log
+.auditoria_secreta.log
+__pycache__/
+*.db
