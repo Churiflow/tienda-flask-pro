@@ -212,7 +212,11 @@ def admin():
     # --- CONSULTAS LIMPIAS FUERA DEL POST PARA EL RENDERIZADO ---
     productos = Producto.query.all()
     pedidos = Pedido.query.all()
-    recaudacion = sum(p.total_pagado for p in pedidos) if pedidos else 0
+    recaudacion = int(sum(p.total_pagado for p in pedidos)) if pedidos else 0
+
+    # 2. Forzamos que el total de CADA pedido en el historial también sea un Entero
+    for pedido in pedidos:
+        pedido.total_pagado = int(pedido.total_pagado)
     
     # Forzamos una consulta directa y limpia a la tabla Banner
     banners = db.session.query(Banner).all() 
