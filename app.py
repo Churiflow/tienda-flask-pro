@@ -190,9 +190,9 @@ def login():
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    if not session.get('admin_logueado'): 
+    if not session.get('admin_logueado'):
         return redirect(url_for('login'))
-        
+
     if request.method == 'POST':
         nuevo = Producto(
             nombre=request.form['nombre'],
@@ -200,10 +200,8 @@ def admin():
             descripcion=request.form['descripcion'],
             imagen=request.form['imagen'],
             categoria=request.form['categoria'],
-            # --- NUEVOS CAMPOS ADAPTADOS A TU FORMULARIO ---
             subcategoria=request.form['subcategoria'],
             genero=request.form['genero'],
-            # -----------------------------------------------
             stock=int(request.form.get('stock', 10))
         )
         db.session.add(nuevo)
@@ -211,12 +209,21 @@ def admin():
         flash("¡Producto añadido con éxito a las nuevas secciones!", "success")
         return redirect(url_for('admin'))
 
+    # --- CONSULTAS LIMPIAS FUERA DEL POST PARA EL RENDERIZADO ---
     productos = Producto.query.all()
     pedidos = Pedido.query.all()
     recaudacion = sum(p.total_pagado for p in pedidos) if pedidos else 0
-    banners = Banner.query.all() # <-- ¡Asegúrate de tener esta línea!
-    return render_template('admin.html', productos=productos, pedidos=pedidos, recaudacion=recaudacion,
-    banners=banners)
+    
+    # Forzamos una consulta directa y limpia a la tabla Banner
+    banners = db.session.query(Banner).all() 
+
+    return render_template(
+        'admin.html', 
+        productos=productos, 
+        pedidos=pedidos, 
+        recaudacion=recaudacion,
+        banners=banners
+    )
 
 @app.route('/eliminar_producto/<int:id>')
 def eliminar_producto(id):

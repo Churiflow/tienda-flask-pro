@@ -196,6 +196,52 @@
                             </div>
                             <button type="submit" class="btn btn-success w-100">Publicar en el Carrusel</button>
                         </form>
+                        <hr class="my-4">
+                                    <h5 class="fw-bold mb-3"><i class="bi bi-images me-2"></i> Banners Activos en el Carrusel</h5>
+                                    
+                                    {% if banners %}
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover align-middle bg-white text-center">
+                                            <thead class="table-dark">
+                                                <tr>
+                                                    <th>Miniatura</th>
+                                                    <th>Título / Info</th>
+                                                    <th>Etiqueta</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for banner in banners %}
+                                                <tr>
+                                                    <td>
+                                                        <img src="{{ banner.imagen_url }}" alt="Banner" style="width: 80px; height: 45px; object-fit: cover; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/80x45?text=Error'">
+                                                    </td>
+                                                    <td class="text-start">
+                                                        <div class="fw-bold text-truncate" style="max-width: 150px;">{{ banner.titulo or 'Sin título' }}</div>
+                                                        <small class="text-muted d-block text-truncate" style="max-width: 150px;">{{ banner.subtitulo or '' }}</small>
+                                                    </td>
+                                                    <td>
+                                                        {% if banner.etiqueta %}
+                                                        <span class="badge bg-danger">{{ banner.etiqueta }}</span>
+                                                        {% else %}
+                                                        <span class="text-muted small">Ninguna</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ url_for('eliminar_banner', id=banner.id) }}" class="btn btn-danger btn-sm px-2 py-1" onclick="return confirm('¿Seguro que deseas eliminar este banner del carrusel?');">
+                                                            <i class="bi bi-trash-fill"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-light text-center border py-3 mb-0">
+                                        <i class="bi bi-info-circle me-2"></i> No hay banners creados en el carrusel actualmente.
+                                    </div>
+                                    {% endif %}
                     </div>
                 </div>
 
