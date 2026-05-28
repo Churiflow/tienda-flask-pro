@@ -40,12 +40,15 @@ class Banner(db.Model):
     imagen_url = db.Column(db.String(300), nullable=False)
     titulo = db.Column(db.String(100))
     subtitulo = db.Column(db.String(200))
+    # NUEVO: Guarda el texto de la oferta (ej: "50% OFF" o "OFERTA")
+     etiqueta = db.Column(db.String(20), nullable=True)
 
 class Cupon(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(20), unique=True, nullable=False) # Ej: "OFERTA10"
     descuento = db.Column(db.Integer, nullable=False) # Porcentaje, ej: 10
     activo = db.Column(db.Boolean, default=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=True)
 
 
 class Pedido(db.Model):
@@ -236,6 +239,9 @@ def imprimir_boleta(id):
     # Si quieres calcular cuánto se ahorró para mostrarlo en el HTML:
     # Nota: Esto asume que los precios de los productos no han cambiado desde que se hizo el pedido.
     # Como ya guardaste el total_final en 'pedido.total_pagado', la boleta ya imprimirá el monto correcto por defecto.
+
+    # Forzamos que el total_pagado sea un entero antes de ir al HTML
+    pedido.total_pagado = int(pedido.total_pagado)
     
     return render_template('boleta.html', pedido=pedido)    
 
@@ -273,11 +279,14 @@ def aplicar_cupon():
 
     if cupon:
         session['porcentaje_descuento'] = cupon.descuento
+        # Guardamos de forma segura el ID del producto asociado en la sesión
+        session['cupon_producto_id'] = cupon.producto_id 
         flash(f"¡Cupón '{codigo_ingresado}' aplicado! Descuento del {cupon.descuento}%", "success")
     else:
-        session.pop('porcentaje_descuento', None) # Quitamos cualquier descuento previo
+        session.pop('porcentaje_descuento', None) # Quitamos descuento previo
+        session.pop('cupon_producto_id', None)     # Quitamos producto asociado previo
         flash("Cupón no válido o expirado", "danger")
-    
+
     return redirect(url_for('ver_carrito'))
 
 
@@ -286,12 +295,19 @@ def crear_cupon():
     codigo = request.form.get('codigo').upper().strip()
     descuento = int(request.form.get('descuento'))
     
-    nuevo_cupon = Cupon(codigo=codigo, descuento=descuento)
+    # Recibimos el ID del producto desde el formulario del administrador
+    # Si viene vacío, lo dejamos como None (para que sea un cupón global si quieres)
+    prod_id = request.form.get('producto_id')
+    prod_id = int(prod_id) if prod_id and prod_id.strip() else None
+
+    # Creamos el cupón amarrándolo al producto específico
+    nuevo_cupon = Cupon(codigo=codigo, descuento=descuento, producto_id=prod_id)
     db.session.add(nuevo_cupon)
     db.session.commit()
-    
+
     flash(f"Cupón {codigo} creado con éxito", "success")
-    return redirect(url_for('admin')) 
+    return redirect(url_for('admin'))
+
 
 # Para esta funcion se instalo Fpdf arriba esta la imorotacion
 
@@ -406,13 +422,32 @@ def agregar_banner():
     titulo = request.form.get('titulo')
     subtitulo = request.form.get('subtitulo')
     imagen_url = request.form.get('imagen_url')
+    # NUEVO: Capturamos la etiqueta de oferta
+    etiqueta = request.form.get('etiqueta')
     
-    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url)
+    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url,etiqueta=etiqueta if etiqueta.strip() else None # Si va vacío, guarda None)
     db.session.add(nuevo_banner)
     db.session.commit()
     
     flash("¡Banner agregado con éxito!", "success")
     return redirect(url_for('admin')) # O la ruta de tu panel
+
+
+@app.route('/admin/eliminar_banner/<int:id>')
+def eliminar_banner(id):
+    # 1. Verificamos seguridad básica de administrador
+    if not session.get('admin_logueado'): 
+        return redirect(url_for('login'))
+        
+    # 2. Buscamos el banner en la base de datos por su ID
+    banner = Banner.query.get_or_404(id)
+    
+    # 3. Lo removemos y guardamos los cambios
+    db.session.delete(banner)
+    db.session.commit()
+    
+    flash("¡Imagen del carrusel eliminada con éxito!", "success")
+    return redirect(url_for('admin'))
 
 
 import base64
