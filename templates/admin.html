@@ -76,6 +76,11 @@
                             <input type="text" name="subcategoria" class="form-control" placeholder="Ej: Poleras, Jeans, Boxers, Gorras, Relojes, Cremas" required>
                         </div>
                         
+                        <div class="mb-2">
+                             <label class="form-label text-muted small"> Producto </label>
+                             <input type="number" name="producto_id" placeholder="ID del Producto (Opcional)">
+                        </div>
+                        
                         <div class="mb-3">
                             <label class="form-label text-muted small">Público / Género</label>
                             <select name="genero" class="form-select" required>
@@ -183,6 +188,10 @@
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">URL de la Imagen</label>
                                     <input type="url" name="imagen_url" class="form-control" placeholder="https://enlace-de-tu-foto.jpg" required>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                     <label class="form-label">Etiqueta (Opcional)</label>
+                                     <input type="text" name="etiqueta" class="form-control" placeholder="Ej: 50% OFF o NUEVO">
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-success w-100">Publicar en el Carrusel</button>

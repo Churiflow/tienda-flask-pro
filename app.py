@@ -41,7 +41,7 @@ class Banner(db.Model):
     titulo = db.Column(db.String(100))
     subtitulo = db.Column(db.String(200))
     # NUEVO: Guarda el texto de la oferta (ej: "50% OFF" o "OFERTA")
-     etiqueta = db.Column(db.String(20), nullable=True)
+    etiqueta = db.Column(db.String(20), nullable=True)
 
 class Cupon(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -214,7 +214,9 @@ def admin():
     productos = Producto.query.all()
     pedidos = Pedido.query.all()
     recaudacion = sum(p.total_pagado for p in pedidos) if pedidos else 0
-    return render_template('admin.html', productos=productos, pedidos=pedidos, recaudacion=recaudacion)
+    banners = Banner.query.all() # <-- ¡Asegúrate de tener esta línea!
+    return render_template('admin.html', productos=productos, pedidos=pedidos, recaudacion=recaudacion,
+    banners=banners)
 
 @app.route('/eliminar_producto/<int:id>')
 def eliminar_producto(id):
@@ -425,7 +427,7 @@ def agregar_banner():
     # NUEVO: Capturamos la etiqueta de oferta
     etiqueta = request.form.get('etiqueta')
     
-    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url,etiqueta=etiqueta if etiqueta.strip() else None # Si va vacío, guarda None)
+    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url,etiqueta=etiqueta if etiqueta.strip() else None) # Si va vacío, guarda None)
     db.session.add(nuevo_banner)
     db.session.commit()
     
