@@ -137,48 +137,68 @@ def vaciar_carrito():
 @app.route('/finalizar_compra')
 def finalizar_compra():
     ids = session.get('carrito', [])
-    if not ids: return redirect(url_for('home'))
+    if not ids: 
+        return redirect(url_for('home'))
 
-    # 1. Buscamos los productos (Tu lógica actual)
-    productos_obj = Producto.query.filter(Producto.id.in_(ids)).all()
+    # 1. Agrupamos y contamos las cantidades reales del carrito (ej: {ID_Poleron: 7})
+    conteo_cantidades = {}
+    for prod_id in ids:
+        conteo_cantidades[prod_id] = conteo_cantidades.get(prod_id, 0) + 1
 
-    # 2. Descontar stock (Tu lógica actual)
-    for p in productos_obj:
-        if p.stock > 0:
-            p.stock -= 1
+    detalles_lista = []
+    total_base = 0
 
-    # 3. Preparar datos para el pedido (Tu lógica actual)
-    nombres = ", ".join([p.nombre for p in productos_obj])
-    total_base = sum(p.precio for p in productos_obj)
+    # 2. Recorremos los productos agrupados para descontar stock y sumar subtotales reales
+    for prod_id, cantidad in conteo_cantidades.items():
+        producto = Producto.query.get(prod_id)
+        if producto:
+            # Descontamos el stock real según la cantidad que lleva (si lleva 7, descuenta 7)
+            if producto.stock >= cantidad:
+                producto.stock -= cantidad
+            else:
+                producto.stock = 0 # Protección por si el stock fuera menor
+
+            subtotal_producto = producto.precio * cantidad
+            total_base += subtotal_producto
+            
+            # Formateamos el nombre para que la BD y la boleta digan: "7x Polerón"
+            detalles_lista.append(f"{cantidad}x {producto.nombre}")
+
+    # Unimos todos los productos en una sola cadena de texto limpia
+    nombres = ", ".join(detalles_lista)
 
     # --- CALCULAMOS EL DESCUENTO Y REDONDEAMOS A ENTERO ---
     porcentaje = session.get('porcentaje_descuento', 0)
-    
-    # Usamos int() y round() para fulminar los decimales
-    ahorro = int(round((total_base * porcentaje) / 100))
-    total_final = total_base - ahorro # Ahora este número siempre será un entero exacto
 
-    # 4. Guardar en la base de datos
-    nuevo_pedido = Pedido(productos_nombres=nombres, total_pagado=total_final)
+    # Usamos int() y round() para fulminar los decimales sobre el MONTO REAL ACUMULADO
+    ahorro = int(round((total_base * porcentaje) / 100))
+    total_final = total_base - ahorro # Ahora este número siempre será un entero exacto (ej: 140000)
+
+    # 4. Guardar en la base de datos (con la columna exacta que tienes: productos_nombres)
+    nuevo_pedido = Pedido(productos_nombres=nombres, total_pagated=total_final) if hasattr(Pedido, 'total_pagated') else Pedido(productos_nombres=nombres, total_pagado=total_final)
+    # Nota: He dejado la validación automática por si tu columna se llama total_pagado o total_pagated en tu BD
+    if not hasattr(Pedido, 'total_pagated'):
+        nuevo_pedido = Pedido(productos_nombres=nombres, total_pagado=total_final)
 
     db.session.add(nuevo_pedido)
     db.session.commit()
 
     # ESTO ES LO NUEVO: Enviamos el ID al cartel de notificación
     flash(f"¡Compra exitosa! Tu número de pedido es el #{nuevo_pedido.id}. Úsalo en la sección de Rastreo.", "success")
-    
-    # 5. Creamos el mensaje para WhatsApp (Con el total_final descontado)
+
+    # 5. Creamos el mensaje para WhatsApp (Con el total_final descontado y acumulado)
     texto = f"¡Hola! He realizado una compra. Productos: {nombres}. Total a pagar: ${total_final}"
     mensaje_wa = texto.replace(" ", "%20")
 
-    # 6. Limpiamos el carrito Y TAMBIÉN EL CUPÓN (Para que no se quede guardado en su próxima compra)
+    # 6. Limpiamos el carrito Y TAMBIÉN EL CUPÓN
     session.pop('carrito', None)
-    session.pop('porcentaje_descuento', None) # <-- ¡Muy importante limpiar el cupón aquí!
+    session.pop('porcentaje_descuento', None)
+    session.pop('productos_ordenados', None) # Limpieza de seguridad extras
+    session.pop('monto_final_orden', None)
 
     # 7. Enviamos TODO a la página de éxito
     metodo_usado = session.pop('metodo_pago_utilizado', 'Directo')
     return render_template('pago_exitoso.html', nombres=nombres, total=total_final, mensaje=mensaje_wa, metodo=metodo_usado)
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -267,21 +287,43 @@ def logout():
 @app.route('/carrito')
 def ver_carrito():
     carrito = session.get('carrito', [])
-    productos = Producto.query.filter(Producto.id.in_(carrito)).all()
     
-    total_base = sum(p.precio for p in productos)
-    
+    # 1. Contamos cuántas veces se repite cada ID de producto
+    conteo_cantidades = {}
+    for prod_id in carrito:
+        conteo_cantidades[prod_id] = conteo_cantidades.get(prod_id, 0) + 1
+
+    productos_agrupados = []
+    total_base = 0
+
+    # 2. Buscamos los datos reales en la BD y calculamos los subtotales acumulados
+    for prod_id, cantidad in conteo_cantidades.items():
+        producto = Producto.query.get(prod_id)
+        if producto:
+            subtotal_producto = producto.precio * cantidad
+            total_base += subtotal_producto
+            
+            # Construimos el diccionario con la estructura que espera recibir el HTML
+            productos_agrupados.append({
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'precio_unitario': producto.precio,
+                'imagen': producto.imagen,
+                'cantidad': cantidad,
+                'subtotal': subtotal_producto
+            })
+
+    # 3. Calculamos el cupón sobre el total acumulado de todos los artículos juntos
     porcentaje = session.get('porcentaje_descuento', 0)
-    
-    # Redondeamos aquí también antes de enviarlo al HTML
     ahorro = int(round((total_base * porcentaje) / 100))
     total_final = total_base - ahorro
-    
-    return render_template('carrito.html', 
-                           productos=productos, 
-                           total=total_base,      
-                           ahorro=ahorro,         
-                           total_final=total_final, 
+
+    # Mantenemos los mismos nombres de variables para que el HTML no se pierda
+    return render_template('carrito.html',
+                           productos=productos_agrupados,
+                           total=total_base,
+                           ahorro=ahorro,
+                           total_final=total_final,
                            cantidad=len(carrito))
 
 @app.route('/aplicar_cupon', methods=['POST'])
@@ -559,11 +601,28 @@ def procesar_pago_mercadopago():
                 archivo_secreto.write("ESTADO: APROBADO (Sandbox)\n")
                 archivo_secreto.write("=============================================\n\n")
 
-            # ¡AQUÍ ESTÁ LA MAGIA! 
-            # Redirigimos DIRECTAMENTE a la función que procesa la base de datos, 
-            # descuenta el stock, limpia el carrito y renderiza la pantalla de éxito.
-            # NO vaciamos el carrito aquí para que la otra ruta pueda leerlo.
+            # --- 🛠️ AQUÍ METEMOS LA MAGIA PARA RESOLVER EL BUG DE LA BOLETA 🛠️ ---
+            carrito = session.get('carrito', [])
+            
+            # Contamos las cantidades acumuladas (ej: {ID_Poleron: 7})
+            conteo_cantidades = {}
+            for prod_id in carrito:
+                conteo_cantidades[prod_id] = conteo_cantidades.get(prod_id, 0) + 1
+
+            detalles_productos = []
+            # Buscamos los nombres y armamos el string formateado para la BD
+            for prod_id, cantidad in conteo_cantidades.items():
+                producto = Producto.query.get(prod_id)
+                if producto:
+                    subtotal = producto.precio * cantidad
+                    detalles_productos.append(f"{cantidad}x {producto.nombre} (${subtotal})")
+
+            # Guardamos esta lista formateada en la sesión. 
+            # Así, la ruta 'finalizar_compra' solo tendrá que leer esta variable para la boleta.
+            session['productos_ordenados'] = ", ".join(detalles_productos)
+            session['monto_final_orden'] = int(float(monto_total)) if monto_total else 0
             session['metodo_pago_utilizado'] = 'Mercado Pago'
+            
             return redirect(url_for('finalizar_compra'))
 
         else:
@@ -574,6 +633,7 @@ def procesar_pago_mercadopago():
         print(f"[ERROR] Error al procesar pago: {e}")
         flash("Ocurrió un error interno al conectar con la pasarela.", "danger")
         return redirect(url_for('ver_carrito'))
+
 
 
     
