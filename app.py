@@ -200,28 +200,64 @@ def finalizar_compra():
     metodo_usado = session.pop('metodo_pago_utilizado', 'Directo')
     return render_template('pago_exitoso.html', nombres=nombres, total=total_final, mensaje=mensaje_wa, metodo=metodo_usado)
 
+import re
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+
+# === COLOQUEMOS EL ESCUDO ARRIBA PARA PODER USARLO ===
+def sanitizar_entrada(texto):
+    if not texto:
+        return ""
+    # 1. Filtro Anti-XSS: Borra etiquetas HTML maliciosas
+    limpio = re.sub(r'<[^>]*>', '', texto)
+    # 2. Filtro Anti-Inyección: Escapa comillas y elimina puntos y comas
+    limpio = limpio.replace("'", "''").replace('"', '\\"').replace(";", "")
+    return limpio.strip()
+
+
+# === TU RUTA DE LOGIN BLINDADA ===
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        if request.form['usuario'] == 'admin' and request.form['clave'] == '12345':
+        # Capturamos con tus campos originales: 'usuario' y 'clave'
+        usuario_raw = request.form.get('usuario', '')
+        clave_raw = request.form.get('clave', '')
+        
+        # PASAMOS EL FILTRO DE SEGURIDAD
+        usuario = sanitizar_entrada(usuario_raw)
+        clave = sanitizar_entrada(clave_raw)
+        
+        # Auditoría SOC en la consola de tu Termux
+        print(f"[SEGURIDAD SOC] Intento Login -> Original: '{usuario_raw}' | Sanitizado: '{usuario}'")
+        
+        # Validación con tus credenciales actuales
+        if usuario == 'admin' and clave == '12345':
             session['admin_logueado'] = True
+            flash("¡Bienvenido al panel, Administrador!", "success")
             return redirect(url_for('admin'))
+        else:
+            flash("Credenciales incorrectas o caracteres no permitidos.", "danger")
+            return redirect(url_for('login'))
+            
     return render_template('login.html')
 
+
+# === TU RUTA DE ADMIN TOTALMENTE PROTEGIDA Y CON SU LÓGICA INTACTA ===
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    # CONTROL DE ACCESO: Mantenemos tu validación de sesión original
     if not session.get('admin_logueado'):
         return redirect(url_for('login'))
 
     if request.method == 'POST':
+        # Cuando creas un producto, también sanitizamos los textos por seguridad
         nuevo = Producto(
-            nombre=request.form['nombre'],
-            precio=int(request.form['precio']),
-            descripcion=request.form['descripcion'],
-            imagen=request.form['imagen'],
-            categoria=request.form['categoria'],
-            subcategoria=request.form['subcategoria'],
-            genero=request.form['genero'],
+            nombre=sanitizar_entrada(request.form.get('nombre', '')),
+            precio=int(request.form.get('precio', 0)),
+            descripcion=sanitizar_entrada(request.form.get('descripcion', '')),
+            imagen=request.form.get('imagen', ''),
+            categoria=request.form.get('categoria', ''),
+            subcategoria=request.form.get('subcategoria', ''),
+            genero=request.form.get('genero', ''),
             stock=int(request.form.get('stock', 10))
         )
         db.session.add(nuevo)
@@ -229,25 +265,27 @@ def admin():
         flash("¡Producto añadido con éxito a las nuevas secciones!", "success")
         return redirect(url_for('admin'))
 
-    # --- CONSULTAS LIMPIAS FUERA DEL POST PARA EL RENDERIZADO ---
+    # --- TU LÓGICA DE CONSULTAS Y ENTEROS INTACTA ---
     productos = Producto.query.all()
     pedidos = Pedido.query.all()
     recaudacion = int(sum(p.total_pagado for p in pedidos)) if pedidos else 0
 
-    # 2. Forzamos que el total de CADA pedido en el historial también sea un Entero
+    # Forzamos enteros en cada pedido del historial
     for pedido in pedidos:
-        pedido.total_pagado = int(pedido.total_pagado)
-    
-    # Forzamos una consulta directa y limpia a la tabla Banner
-    banners = db.session.query(Banner).all() 
+        if pedido.total_pagado is not None:
+            pedido.total_pagado = int(pedido.total_pagado)
+
+    # Consulta limpia a la tabla Banner para tu carrusel
+    banners = db.session.query(Banner).all()
 
     return render_template(
-        'admin.html', 
-        productos=productos, 
-        pedidos=pedidos, 
+        'admin.html',
+        productos=productos,
+        pedidos=pedidos,
         recaudacion=recaudacion,
         banners=banners
     )
+
 
 @app.route('/eliminar_producto/<int:id>')
 def eliminar_producto(id):
@@ -633,8 +671,6 @@ def procesar_pago_mercadopago():
         print(f"[ERROR] Error al procesar pago: {e}")
         flash("Ocurrió un error interno al conectar con la pasarela.", "danger")
         return redirect(url_for('ver_carrito'))
-
-
 
     
 if __name__ == '__main__':
