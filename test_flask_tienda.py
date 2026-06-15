@@ -25,13 +25,11 @@ class TestFlaskTienda(unittest.TestCase):
         self.assertEqual(respuesta.status_code, 200)
 
     def test_login_incorrecto(self):
-        # Mandamos datos erróneos
-        respuesta = self.client.post('/login', data={
-            'usuario': 'hacker_malo',
-            'clave': 'clave_falsa_999'
-        }, follow_redirects=True)
-        # Como te recarga la misma página, validamos que siga ahí buscando el botón "Entrar"
-        self.assertIn(b'Entrar', respuesta.data)
-
+            # Enviamos comillas para que la función de sanitización actúe y salte la alerta
+            respuesta = self.client.post('/login', data={
+                'usuario': "admin' OR '1'='1",
+                'clave': 'clave_falsa_999'
+            }, follow_redirects=True)
+            self.assertIn(b'Entrar', respuesta.data)
 if __name__ == '__main__':
     unittest.main()
