@@ -1,19 +1,16 @@
-import base64
+from cryptography.fernet import Fernet
 
-print("\n=== AUDITORÍA PRIVADA: REGISTROS DESENCRIPTADOS ===")
+# El atacante consiguió la llave que estaba guardada en app.py
+LLAVE_ROBADA = b'7_W2k7R_m3Uq9ZpX9f_8vB7k2M4n6Q8rTe1Y3u5I7o0='
+cipher_suite = Fernet(LLAVE_ROBADA)
+
+print("--- AUDITORÍA FORENSE DE TARJETAS ---")
+print("Copia y pega el bloque cifrado largo (gAAAAAB...) que viste en el log:")
+bloque_cifrado = input("> ").strip()
+
 try:
-    with open(".auditoria_secreta.log", "r") as archivo:
-        for linea in archivo:
-            if "Tarjeta (Encriptada en Base64):" in linea:
-                encriptado = linea.split(": ")[1].strip()
-                desencriptado = base64.b64decode(encriptado).decode('utf-8')
-                print(f"-> Número de Tarjeta Real: {desencriptado}")
-            elif "CVV (Encriptado en Base64):" in linea:
-                encriptado = linea.split(": ")[1].strip()
-                desencriptado = base64.b64decode(encriptado).decode('utf-8')
-                print(f"-> Código CVV Real: {desencriptado}")
-            else:
-                print(linea.strip())
-except FileNotFoundError:
-    print("[!] Aún no existen registros de transacciones para desencriptar.")
-print("===================================================\n")
+    texto_plano = cipher_suite.decrypt(bloque_cifrado.encode('utf-8')).decode('utf-8')
+    print(f"\n[🔓 ACCESO EXITOSO]: El dato real oculto es: {texto_plano}")
+    print("---------------------------------------")
+except Exception as e:
+    print("\n[❌ ERROR]: Llave incorrecta o bloque corrupto. No se pudo descifrar.")

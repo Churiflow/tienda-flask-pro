@@ -31,5 +31,15 @@ class TestFlaskTienda(unittest.TestCase):
                 'clave': 'clave_falsa_999'
             }, follow_redirects=True)
             self.assertIn(b'Entrar', respuesta.data)
+
+    def test_pago_criptografico_directo(self):
+                    respuesta = self.client.post('/procesar_pago_directo', data={
+                        'nombre_titular': 'Tester Cripto',
+                        'numero_tarjeta': '4512345678901234',
+                        'vencimiento': '12/29',
+                        'cvv': '852',
+                        'monto': '36990'
+                    }, follow_redirects=True)
+                    self.assertEqual(respuesta.status_code, 200)       
 if __name__ == '__main__':
     unittest.main()
