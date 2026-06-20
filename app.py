@@ -3,15 +3,26 @@ from flask_sqlalchemy import SQLAlchemy
 from fpdf import FPDF
 from datetime import datetime
 from io import StringIO
-import os
 import csv
 import re
 import base64
 import mercadopago
 import logging
 
+import os
 from cryptography.fernet import Fernet
-LLAVE_MAESTRA = b'7_W2k7R_m3Uq9ZpX9f_8vB7k2M4n6Q8rTe1Y3u5I7o0=' 
+
+# 🌍 EXTRACCIÓN DE VARIABLE DE ENTORNO SEGURA
+# Usamos os.environ.get para estirar la mano hacia la memoria del sistema operativo
+llave_sistema = os.environ.get('LLAVE_TIENDA')
+
+if llave_sistema:
+    # Fernet exige que la llave sea de tipo bytes, por eso usamos .encode()
+    LLAVE_MAESTRA = llave_sistema.encode('utf-8')
+else:
+    print("[⚠️ ALERTA DE INGENIERÍA]: No se encontró la variable 'LLAVE_TIENDA' en el entorno. Usando llave de emergencia.")
+    LLAVE_MAESTRA = b'7_W2k7R_m3Uq9ZpX9f_8vB7k2M4n6Q8rTe1Y3u5I7o0='
+
 cipher_suite = Fernet(LLAVE_MAESTRA)
 
 
