@@ -1,30 +1,29 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, Response
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_required, current_user, login_user, logout_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from fpdf import FPDF
 from datetime import datetime
 from io import StringIO
+from functools import wraps
 import csv
 import re
 import base64
 import mercadopago
 import logging
-
 import os
 from cryptography.fernet import Fernet
 
 # 🌍 EXTRACCIÓN DE VARIABLE DE ENTORNO SEGURA
-# Usamos os.environ.get para estirar la mano hacia la memoria del sistema operativo
 llave_sistema = os.environ.get('LLAVE_TIENDA')
 
 if llave_sistema:
-    # Fernet exige que la llave sea de tipo bytes, por eso usamos .encode()
     LLAVE_MAESTRA = llave_sistema.encode('utf-8')
 else:
     print("[⚠️ ALERTA DE INGENIERÍA]: No se encontró la variable 'LLAVE_TIENDA' en el entorno. Usando llave de emergencia.")
     LLAVE_MAESTRA = b'7_W2k7R_m3Uq9ZpX9f_8vB7k2M4n6Q8rTe1Y3u5I7o0='
 
 cipher_suite = Fernet(LLAVE_MAESTRA)
-
 
 # === CONFIGURACIÓN DE AUDITORÍA CYBERSOC ===
 logging.basicConfig(
@@ -36,13 +35,31 @@ logging.basicConfig(
 )
 
 app = Flask(__name__)
-app.secret_key = 'mi_clave_secreta_pro_2026'
+app.secret_key = os.environ.get('SECRET_KEY', 'mi_clave_secreta_pro_2026')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tienda.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# --- CONFIGURACIÓN FLASK-LOGIN ---
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 # --- MODELOS ---
+class Usuario(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    es_admin = db.Column(db.Boolean, default=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
 class Producto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
@@ -53,6 +70,12 @@ class Producto(db.Model):
     categoria = db.Column(db.String(50), nullable=False, default="Calzado")
     subcategoria = db.Column(db.String(50), nullable=False, default="Zapatillas")
     genero = db.Column(db.String(20), nullable=False, default="Unisex")
+
+    def promedio_calificaciones(self):
+        if not self.resenas:
+            return 0
+        total = sum(r.calificacion for r in self.resenas)
+        return round(total / len(self.resenas), 1)
 
 class Banner(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,19 +98,45 @@ class Pedido(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.now)
     estado = db.Column(db.String(20), default='Pendiente')
 
+class Resena(db.Model):
+    __tablename__ = 'resenas'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    calificacion = db.Column(db.Integer, nullable=False)
+    comentario = db.Column(db.Text, nullable=True)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Permite None si el autor es un visitante anónimo
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('producto.id'), nullable=False)
+    autor_nombre = db.Column(db.String(100), nullable=False, default='Cliente Anónimo')
+    
+    usuario = db.relationship('Usuario', backref=db.backref('resenas', lazy=True))
+    producto = db.relationship('Producto', backref=db.backref('resenas', lazy=True))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuario.query.get(int(user_id))
+
 with app.app_context():
     db.create_all()
 
-# === FUNCIONES DE RESPALDO PERIMETRAL ===
+# === DECORADOR Y FUNCIONES AUXILIARES ===
+def admin_requerido(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logueado'):
+            flash("Acceso restringido a administradores.", "danger")
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def sanitizar_entrada(texto):
     if not texto:
         return ""
-    # 1. Filtro Anti-XSS
     limpio = re.sub(r'<[^>]*>', '', texto)
-    # 2. Filtro Anti-Inyección
     limpio = limpio.replace("'", "''").replace('"', '""')
 
-    # Alerta SOC: Se dispara al disco duro si detecta diferencias
     if texto != limpio:
         mensaje_alerta = f"Intento de inyección detectado | Original: '{texto}' | Sanitizado: '{limpio}'"
         logging.warning(mensaje_alerta)
@@ -217,21 +266,49 @@ def login():
 
         print(f"[SEGURIDAD SOC] Intento Login -> Original: '{usuario_raw}' | Sanitizado: '{usuario}'")
 
-        if usuario == 'admin' and clave == '12345':
+        # Acceso de Administrador
+        if usuario == os.environ.get('ADMIN_USER', 'admin') and clave == os.environ.get('ADMIN_PASS', '12345'):
             session['admin_logueado'] = True
             flash("¡Bienvenido al panel, Administrador!", "success")
             return redirect(url_for('admin'))
-        else:
-            flash("Credenciales incorrectas o caracteres no permitidos.", "danger")
-            return redirect(url_for('login'))
+
+        # Autenticación de Usuario Regular
+        usr = Usuario.query.filter_by(email=usuario).first()
+        if usr and usr.check_password(clave):
+            login_user(usr)
+            flash(f"¡Bienvenido de nuevo, {usr.nombre}!", "success")
+            return redirect(url_for('home'))
+
+        flash("Credenciales incorrectas o caracteres no permitidos.", "danger")
+        return redirect(url_for('login'))
 
     return render_template('login.html')
 
-@app.route('/admin', methods=['GET', 'POST'])
-def admin():
-    if not session.get('admin_logueado'):
-        return redirect(url_for('login'))
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        nombre = sanitizar_entrada(request.form.get('nombre'))
+        email = sanitizar_entrada(request.form.get('email'))
+        password = request.form.get('password')
 
+        if Usuario.query.filter_by(email=email).first():
+            flash('El correo ya se encuentra registrado.', 'danger')
+            return redirect(url_for('registro'))
+
+        nuevo_usuario = Usuario(nombre=nombre, email=email)
+        nuevo_usuario.set_password(password)
+        db.session.add(nuevo_usuario)
+        db.session.commit()
+
+        login_user(nuevo_usuario)
+        flash('Registro exitoso. ¡Sesión iniciada!', 'success')
+        return redirect(url_for('home'))
+
+    return render_template('registro.html')
+
+@app.route('/admin', methods=['GET', 'POST'])
+@admin_requerido
+def admin():
     if request.method == 'POST':
         nuevo = Producto(
             nombre=sanitizar_entrada(request.form.get('nombre', '')),
@@ -267,6 +344,7 @@ def admin():
     )
 
 @app.route('/eliminar_producto/<int:id>')
+@admin_requerido
 def eliminar_producto(id):
     prod = Producto.query.get_or_404(id)
     db.session.delete(prod)
@@ -274,9 +352,8 @@ def eliminar_producto(id):
     return redirect(url_for('admin'))
 
 @app.route('/despachar/<int:id>')
+@admin_requerido
 def despachar_pedido(id):
-    if not session.get('admin_logueado'): 
-        return redirect(url_for('login'))
     pedido = Pedido.query.get(id)
     if pedido:
         pedido.estado = 'Despachado'
@@ -292,6 +369,8 @@ def imprimir_boleta(id):
 @app.route('/logout')
 def logout():
     session.pop('admin_logueado', None)
+    logout_user()
+    flash("Has cerrado sesión correctamente.", "info")
     return redirect(url_for('home'))
 
 @app.route('/carrito')
@@ -332,7 +411,7 @@ def ver_carrito():
 
 @app.route('/aplicar_cupon', methods=['POST'])
 def aplicar_cupon():
-    codigo_ingresado = request.form.get('codigo_cupon').upper().strip()
+    codigo_ingresado = request.form.get('codigo_cupon', '').upper().strip()
     cupon = Cupon.query.filter_by(codigo=codigo_ingresado, activo=True).first()
 
     if cupon:
@@ -347,9 +426,10 @@ def aplicar_cupon():
     return redirect(url_for('ver_carrito'))
 
 @app.route('/admin/crear_cupon', methods=['POST'])
+@admin_requerido
 def crear_cupon():
-    codigo = request.form.get('codigo').upper().strip()
-    descuento = int(request.form.get('descuento'))
+    codigo = request.form.get('codigo', '').upper().strip()
+    descuento = int(request.form.get('descuento', 0))
     prod_id = request.form.get('producto_id')
     prod_id = int(prod_id) if prod_id and prod_id.strip() else None
 
@@ -416,6 +496,7 @@ def descargar_ticket():
     return send_file(nombre_pdf, as_attachment=True)
 
 @app.route('/admin/exportar_ventas')
+@admin_requerido
 def exportar_ventas():
     pedidos = Pedido.query.all()
     si = StringIO()
@@ -446,13 +527,14 @@ def rastreo():
     return render_template('rastreo.html', pedido=pedido, error=error)
 
 @app.route('/admin/banner', methods=['POST'])
+@admin_requerido
 def agregar_banner():
     titulo = request.form.get('titulo')
     subtitulo = request.form.get('subtitulo')
     imagen_url = request.form.get('imagen_url')
     etiqueta = request.form.get('etiqueta')
 
-    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url, etiqueta=etiqueta if etiqueta.strip() else None)
+    nuevo_banner = Banner(titulo=titulo, subtitulo=subtitulo, imagen_url=imagen_url, etiqueta=etiqueta if etiqueta and etiqueta.strip() else None)
     db.session.add(nuevo_banner)
     db.session.commit()
 
@@ -460,17 +542,14 @@ def agregar_banner():
     return redirect(url_for('admin'))
 
 @app.route('/admin/eliminar_banner/<int:id>')
+@admin_requerido
 def eliminar_banner(id):
-    if not session.get('admin_logueado'):
-        return redirect(url_for('login'))
-
     banner = Banner.query.get_or_404(id)
     db.session.delete(banner)
     db.session.commit()
 
     flash("¡Imagen del carrusel eliminada con éxito!", "success")
     return redirect(url_for('admin'))
-
 
 @app.route('/procesar_pago_directo', methods=['POST'])
 def procesar_pago_directo():
@@ -480,8 +559,6 @@ def procesar_pago_directo():
     codigo_cvv = request.form.get('cvv', '')
     monto_total = request.form.get('monto', '')
 
-    # 🔒 CAPA CRIPTOGRÁFICA DE GRADO MILITAR (AES-FERNET)
-    # Conservamos tu lógica segura: si no hay datos, evitamos que el sistema explote
     if numero_tarjeta:
         tarjeta_bytes = numero_tarjeta.encode('utf-8')
         tarjeta_encriptada = cipher_suite.encrypt(tarjeta_bytes).decode('utf-8')
@@ -509,7 +586,6 @@ def procesar_pago_directo():
     flash("¡Pago recibido con éxito! Tu pedido está siendo procesado.", "success")
     session['carrito'] = []
     return redirect('/')
-
 
 @app.route('/procesar_pago_mercadopago', methods=['POST'])
 def procesar_pago_mercadopago():
@@ -554,6 +630,39 @@ def procesar_pago_mercadopago():
         print(f"[ERROR] Error al procesar pago: {e}")
         flash("Ocurrió un error interno al conectar con la pasarela.", "danger")
         return redirect(url_for('ver_carrito'))
+
+# --- RUTA DE RESEÑAS HÍBRIDA (REGISTRADOS + VISITANTES) ---
+@app.route('/producto/<int:producto_id>/resena', methods=['POST'])
+def agregar_resena(producto_id):
+    producto = Producto.query.get_or_404(producto_id)
+    calificacion = request.form.get('calificacion', type=int)
+    comentario = sanitizar_entrada(request.form.get('comentario', ''))
+
+    if not calificacion or calificacion < 1 or calificacion > 5:
+        flash('Por favor selecciona una calificación válida entre 1 y 5 estrellas.', 'danger')
+        return redirect(url_for('home'))
+
+    # Determinar autoría (Usuario registrado vs. Visitante)
+    if current_user.is_authenticated:
+        usuario_id = current_user.id
+        autor_nombre = current_user.nombre
+    else:
+        usuario_id = None
+        autor_nombre = sanitizar_entrada(request.form.get('nombre_visitante', 'Cliente Anónimo'))
+
+    nueva_resena = Resena(
+        calificacion=calificacion,
+        comentario=comentario,
+        usuario_id=usuario_id,
+        autor_nombre=autor_nombre,
+        producto_id=producto.id
+    )
+
+    db.session.add(nueva_resena)
+    db.session.commit()
+
+    flash('¡Muchas gracias! Tu reseña ha sido publicada.', 'success')
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

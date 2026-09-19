@@ -1,303 +1,402 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">                                   
-    <title>Panel de Control - Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Panel de Administración - Tienda</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body { background-color: #f8f9fa; font-size: 14px; }
+    
+    /* Configuración de barra lateral para escritorio */
+    @media (min-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        padding: 48px 0 0;
+        box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+      }
+      .main-content {
+        margin-left: 16.666667%;
+      }
+    }
+
+    .sidebar { background-color: #212529; }
+    .sidebar .nav-link { color: rgba(255,255,255,.75); margin-bottom: 5px; border-radius: 6px; }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: rgba(255,255,255,.15); }
+    
+    .card-dashboard { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; }
+    
+    /* Adaptaciones específicas para celular */
+    @media (max-width: 767.98px) {
+      .navbar-brand { font-size: 1.1rem; }
+      .table-responsive { font-size: 13px; }
+      .btn-sm { padding: 0.25rem 0.4rem; font-size: 0.75rem; }
+    }
+  </style>
 </head>
-<body class="bg-light p-4">
-    <div class="container">                                     
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <div class="card bg-primary text-white shadow-sm border-0 h-100">
-                    <div class="card-body d-flex flex-column justify-content-center align-items-center">
-                        <h6 class="text-uppercase opacity-75">Ventas Totales</h6>
-                        <h2 class="display-4 fw-bold">
-                            ${{ pedidos | sum(attribute='total_pagado') }}
-                        </h2>
-                        <i class="bi bi-cash-stack h1 opacity-25"></i>
-                    </div>
-                </div>
-            </div>
+<body>
 
-            <div class="col-md-6 mb-3">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold mb-3">Agente de Reportes</h5>
-                        <p class="text-muted small">Genera un archivo CSV con el historial completo de ventas para Excel.</p>
-                        <div class="d-grid gap-2">
-                            <a href="/admin/exportar_ventas" class="btn btn-outline-primary">
-                                <i class="bi bi-file-earmark-spreadsheet"></i> Descargar Reporte CSV
-                            </a>
-                        </div>
-                    </div>
-                </div>
+<!-- BARRA NAVEGACIÓN SUPERIOR PARA MÓVILES -->
+<nav class="navbar navbar-dark bg-dark d-md-none sticky-top px-3">
+  <a class="navbar-brand fw-bold" href="#">Admin Panel</a>
+  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+</nav>
+
+<div class="container-fluid">
+  <div class="row">
+    
+    <!-- BARRA LATERAL (Desplegable en celular, fija en PC) -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse p-3">
+      <div class="d-none d-md-block text-center fw-bold text-white fs-5 py-2 mb-3 border-bottom border-secondary">
+        Admin Panel
+      </div>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link active" href="#dashboard" data-bs-toggle="tab" onclick="closeMobileMenu()">
+            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#productos" data-bs-toggle="tab" onclick="closeMobileMenu()">
+            <i class="bi bi-box-seam me-2"></i> Productos
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#banners" data-bs-toggle="tab" onclick="closeMobileMenu()">
+            <i class="bi bi-images me-2"></i> Banners Carrusel
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#cupones" data-bs-toggle="tab" onclick="closeMobileMenu()">
+            <i class="bi bi-ticket-perforated me-2"></i> Cupones
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#ventas" data-bs-toggle="tab" onclick="closeMobileMenu()">
+            <i class="bi bi-cart-check me-2"></i> Ventas
+          </a>
+        </li>
+      </ul>
+      <div class="mt-4 pt-3 border-top border-secondary">
+        <a href="/" class="btn btn-outline-light w-100"><i class="bi bi-shop me-2"></i> Ir a la Tienda</a>
+      </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
+      
+      <div class="tab-content">
+        
+        <!-- PESTAÑA: DASHBOARD -->
+        <div class="tab-pane fade show active" id="dashboard">
+          <h2 class="h3 mb-3">Resumen General</h2>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card card-dashboard bg-primary text-white p-3">
+                <span class="fs-6">Total Recaudado</span>
+                <h3 class="fw-bold mt-1">${{ "%.2f"|format(recaudacion) }}</h3>
+              </div>
             </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card card-dashboard bg-success text-white p-3">
+                <span class="fs-6">Productos Activos</span>
+                <h3 class="fw-bold mt-1">{{ productos|length }}</h3>
+              </div>
+            </div>
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card card-dashboard bg-warning text-dark p-3">
+                <span class="fs-6">Pedidos Realizados</span>
+                <h3 class="fw-bold mt-1">{{ pedidos|length }}</h3>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>🚀 Panel de Control</h1>
-            <a href="/logout" class="btn btn-danger">Cerrar Sesión</a>
+        <!-- PESTAÑA: PRODUCTOS -->
+        <div class="tab-pane fade" id="productos">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h3 mb-0">Productos</h2>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalProducto">
+              <i class="bi bi-plus-circle me-1"></i> Nuevo
+            </button>
+          </div>
+
+          <div class="card card-dashboard p-2 p-md-3">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Img</th>
+                    <th>Nombre</th>
+                    <th>Cat.</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in productos %}
+                  <tr>
+                    <td>
+                      <img src="{{ p.imagen }}" alt="{{ p.nombre }}" class="img-preview" onerror="this.src='https://via.placeholder.com/45'">
+                    </td>
+                    <td class="fw-bold">{{ p.nombre }}</td>
+                    <td><span class="badge bg-secondary">{{ p.categoria }}</span></td>
+                    <td>${{ "%.2f"|format(p.precio) }}</td>
+                    <td>
+                      {% if p.stock < 5 %}
+                        <span class="badge bg-danger">Bajo ({{ p.stock }})</span>
+                      {% else %}
+                        <span class="badge bg-success">{{ p.stock }}</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{{ url_for('eliminar_producto', id=p.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar producto?');">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No hay productos registrados.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card p-3 shadow-sm mb-4">
-                    <h4>📦 Registrar Nuevo Producto</h4>
-                    <form method="POST">
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">Nombre / Marca</label>
-                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Nike Air Max" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">Precio</label>
-                            <input type="number" name="precio" class="form-control" placeholder="Ej: 89990" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">Stock Inicial</label>
-                            <input type="number" name="stock" class="form-control" value="10" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">Descripción Corta</label>
-                            <textarea name="descripcion" class="form-control" rows="2"></textarea>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">URL de la Imagen</label>
-                            <input type="text" name="imagen" class="form-control">
-                        </div>
+        <!-- PESTAÑA: BANNERS -->
+        <div class="tab-pane fade" id="banners">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h3 mb-0">Banners Carrusel</h2>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalBanner">
+              <i class="bi bi-plus-circle me-1"></i> Agregar
+            </button>
+          </div>
 
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">Categoría Principal</label>
-                            <input type="text" name="categoria" class="form-control" placeholder="Ej: Ropa, Perfumeria, Accesorios, Deportes" required>
-                        </div>
-                        
-                        <div class="mb-2">
-                            <label class="form-label text-muted small">Subcategoría (Tipo de Producto)</label>
-                            <input type="text" name="subcategoria" class="form-control" placeholder="Ej: Poleras, Jeans, Boxers, Gorras, Relojes, Cremas" required>
-                        </div>
-                        
-                        <div class="mb-2">
-                             <label class="form-label text-muted small"> Producto </label>
-                             <input type="number" name="producto_id" placeholder="ID del Producto (Opcional)">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label text-muted small">Público / Género</label>
-                            <select name="genero" class="form-select" required>
-                                <option value="Unisex">Unisex 👥</option>
-                                <option value="Hombre">Hombre 👨</option>
-                                <option value="Mujer">Mujer 👩</option>
-                                <option value="Niños">Niños 👶</option>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100">🚀 Guardar en el Catálogo</button>
-                    </form>
+          <div class="row g-3">
+            {% for b in banners %}
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="card card-dashboard overflow-hidden">
+                <img src="{{ b.imagen_url }}" class="card-img-top" style="height: 140px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/300x140'">
+                <div class="card-body p-3">
+                  <h6 class="fw-bold mb-1">{{ b.titulo }}</h6>
+                  <p class="text-muted small mb-2">{{ b.subtitulo }}</p>
+                  {% if b.etiqueta %}
+                    <span class="badge bg-info mb-2">{{ b.etiqueta }}</span>
+                  {% endif %}
+                  <a href="{{ url_for('eliminar_banner', id=b.id) }}" class="btn btn-sm btn-danger w-100 mt-1" onclick="return confirm('¿Eliminar banner?');">
+                    Eliminar
+                  </a>
                 </div>
-
-                <div class="card p-3 bg-dark text-white shadow-sm">
-                    <h5>💰 Recaudación Total</h5>
-                    <h2 class="text-success">${{ recaudacion }}</h2>
-                </div>
+              </div>
             </div>
-
-            <div class="col-md-8">
-                <div class="card p-3 shadow-sm mb-4">
-                    <h4>📦 Inventario de Productos</h4>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Precio</th>
-                                    <th>Imagen</th>
-                                    <th>Stock</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for producto in productos %}
-                                <tr>
-                                    <td>{{ producto.nombre }}</td>
-                                    <td>${{ producto.precio }}</td>
-                                    <td><img src="{{ producto.imagen }}" width="40" style="border-radius: 5px;"></td>
-                                    <td>
-                                        {% if producto.stock > 3 %}
-                                            <span class="badge bg-success">{{ producto.stock }} unid.</span>
-                                        {% elif producto.stock > 0 %}
-                                            <span class="badge bg-warning text-dark">{{ producto.stock }} ¡Bajo!</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">SIN STOCK</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('eliminar_producto', id=producto.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Borrar?')">🗑️</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="card p-3 shadow-sm mb-4 border-0">
-                    <h5 class="mb-3">📊 Monitor de Inventario</h5>
-                    {% for p in productos %}
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold text-dark">{{ p.nombre }}</span>
-                            {% if p.stock < 3 %}
-                                <span class="badge bg-danger">¡Crítico!</span>
-                            {% elif p.stock < 6 %}
-                                <span class="badge bg-warning text-dark">Reponer</span>
-                            {% else %}
-                                <span class="badge bg-success">Ok</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="progress" style="height: 12px; background-color: #e9ecef;">
-                            {% set ancho = (p.stock * 10) if p.stock <= 10 else 100 %}
-                            <div class="progress-bar progress-bar-striped progress-bar-animated
-                                {% if p.stock < 3 %} bg-danger
-                                {% elif p.stock < 6 %} bg-warning
-                                {% else %} bg-success {% endif %}"
-                                role="progressbar"
-                                style="width: {{ ancho }}%;">
-                            </div>
-                        </div>
-                        <small class="text-muted">{{ p.stock }} unidades disponibles</small>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                <div class="card shadow-sm mb-5">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">✨ Gestionar Carrusel (Banners)</h4>
-                    </div>
-                    <div class="card-body">
-                        <form action="/admin/banner" method="POST">
-                            <div class="row">
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Título del Banner</label>
-                                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Ofertas de Verano" required>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">Subtítulo (Descripción corta)</label>
-                                    <input type="text" name="subtitulo" class="form-control" placeholder="Ej: 20% de descuento en todo" required>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label class="form-label">URL de la Imagen</label>
-                                    <input type="url" name="imagen_url" class="form-control" placeholder="https://enlace-de-tu-foto.jpg" required>
-                                </div>
-                                <div class="col-md-2 mb-3">
-                                     <label class="form-label">Etiqueta (Opcional)</label>
-                                     <input type="text" name="etiqueta" class="form-control" placeholder="Ej: 50% OFF o NUEVO">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-success w-100">Publicar en el Carrusel</button>
-                        </form>
-                        <hr class="my-4">
-                                    <h5 class="fw-bold mb-3"><i class="bi bi-images me-2"></i> Banners Activos en el Carrusel</h5>
-                                    
-                                    {% if banners %}
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-hover align-middle bg-white text-center">
-                                            <thead class="table-dark">
-                                                <tr>
-                                                    <th>Miniatura</th>
-                                                    <th>Título / Info</th>
-                                                    <th>Etiqueta</th>
-                                                    <th>Acción</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {% for banner in banners %}
-                                                <tr>
-                                                    <td>
-                                                        <img src="{{ banner.imagen_url }}" alt="Banner" style="width: 80px; height: 45px; object-fit: cover; border-radius: 4px;" onerror="this.src='https://via.placeholder.com/80x45?text=Error'">
-                                                    </td>
-                                                    <td class="text-start">
-                                                        <div class="fw-bold text-truncate" style="max-width: 150px;">{{ banner.titulo or 'Sin título' }}</div>
-                                                        <small class="text-muted d-block text-truncate" style="max-width: 150px;">{{ banner.subtitulo or '' }}</small>
-                                                    </td>
-                                                    <td>
-                                                        {% if banner.etiqueta %}
-                                                        <span class="badge bg-danger">{{ banner.etiqueta }}</span>
-                                                        {% else %}
-                                                        <span class="text-muted small">Ninguna</span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>
-                                                        <a href="{{ url_for('eliminar_banner', id=banner.id) }}" class="btn btn-danger btn-sm px-2 py-1" onclick="return confirm('¿Seguro que deseas eliminar este banner del carrusel?');">
-                                                            <i class="bi bi-trash-fill"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    {% else %}
-                                    <div class="alert alert-light text-center border py-3 mb-0">
-                                        <i class="bi bi-info-circle me-2"></i> No hay banners creados en el carrusel actualmente.
-                                    </div>
-                                    {% endif %}
-                    </div>
-                </div>
-
-                <div class="card shadow-sm mt-4">
-                    <div class="card-header bg-warning">
-                        <h4 class="mb-0">🎟️ Crear Cupón de Descuento</h4>
-                    </div>
-                    <div class="card-body">
-                        <form action="/admin/crear_cupon" method="POST" class="row g-3">
-                            <div class="col-md-6">
-                                <input type="text" name="codigo" class="form-control" placeholder="CÓDIGO (Ej: PROMO20)" required>
-                            </div>
-                            <div class="col-md-4">
-                                <input type="number" name="descuento" class="form-control" placeholder="% Descuento" required>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-dark w-100">Crear</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <div class="card p-3 shadow-sm mt-4">
-                    <h4>📋 Historial de Pedidos</h4>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Productos</th>
-                                    <th>Total</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for pedido in pedidos %}
-                                <tr>
-                                    <td>{{ pedido.fecha.strftime('%d/%m %H:%M') }}</td>
-                                    <td>{{ pedido.productos_nombres }}</td>
-                                    <td class="text-success fw-bold">${{ pedido.total_pagado }}</td>
-                                    <td>
-                                        <a href="{{ url_for('imprimir_boleta', id=pedido.id) }}" class="btn btn-sm btn-info" target="_blank">📄 Boleta</a>
-                                        <a href="{{ url_for('despachar_pedido', id=pedido.id) }}" class="btn btn-sm btn-outline-success">✅ Despachar</a>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr><td colspan="4" class="text-center text-muted">No hay ventas.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            {% else %}
+            <div class="col-12 text-center text-muted py-4">No hay banners agregados.</div>
+            {% endfor %}
+          </div>
         </div>
-        <br>
-        <a href="/" class="btn btn-secondary">← Volver a la Tienda</a>
+
+        <!-- PESTAÑA: CUPONES -->
+        <div class="tab-pane fade" id="cupones">
+          <h2 class="h3 mb-3">Crear Cupón</h2>
+          <div class="card card-dashboard p-3 p-md-4" style="max-width: 500px;">
+            <form action="{{ url_for('crear_cupon') }}" method="POST">
+              <div class="mb-3">
+                <label class="form-label">Código del Cupón</label>
+                <input type="text" name="codigo" class="form-control" placeholder="EJ: DESCUENTO10" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Descuento (%)</label>
+                <input type="number" name="descuento" class="form-control" min="1" max="100" placeholder="10" required>
+              </div>
+              <button type="submit" class="btn btn-success w-100">Guardar Cupón</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- PESTAÑA: VENTAS -->
+        <div class="tab-pane fade" id="ventas">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h3 mb-0">Ventas</h2>
+            <a href="{{ url_for('exportar_ventas') }}" class="btn btn-outline-success btn-sm">
+              <i class="bi bi-file-earmark-spreadsheet me-1"></i> CSV
+            </a>
+          </div>
+
+          <div class="card card-dashboard p-2 p-md-3">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Detalle</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ped in pedidos %}
+                  <tr>
+                    <td>#{{ ped.id }}</td>
+                    <td><small>{{ ped.fecha.strftime('%Y-%m-%d %H:%M') if ped.fecha else 'N/A' }}</small></td>
+                    <td><small>{{ ped.productos_nombres }}</small></td>
+                    <td class="fw-bold">${{ "%.2f"|format(ped.total_pagado) }}</td>
+                    <td>
+                      {% if ped.despachado %}
+                        <span class="badge bg-success">Listo</span>
+                      {% else %}
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{{ url_for('imprimir_boleta', id=ped.id) }}" target="_blank" class="btn btn-sm btn-outline-dark me-1">
+                        <i class="bi bi-printer"></i>
+                      </a>
+                      {% if not ped.despachado %}
+                      <a href="{{ url_for('despachar_pedido', id=ped.id) }}" class="btn btn-sm btn-success">
+                        <i class="bi bi-check-lg"></i>
+                      </a>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No se han registrado ventas.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- MODAL AGREGAR PRODUCTO -->
+<div class="modal fade" id="modalProducto" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form action="{{ url_for('admin') }}" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-2">
+            <div class="col-12 col-md-6">
+              <label class="form-label small">Nombre</label>
+              <input type="text" name="nombre" class="form-control" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Precio ($)</label>
+              <input type="number" step="0.01" name="precio" class="form-control" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Stock</label>
+              <input type="number" name="stock" class="form-control" value="10" required>
+            </div>
+            <div class="col-12 col-md-4">
+              <label class="form-label small">Categoría</label>
+              <select name="categoria" class="form-select" required>
+                <option value="Ropa">Ropa</option>
+                <option value="Calzado">Calzado</option>
+                <option value="Accesorios">Accesorios</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4">
+              <label class="form-label small">Subcategoría</label>
+              <input type="text" name="subcategoria" class="form-control" placeholder="Ej: Poleras" required>
+            </div>
+            <div class="col-6 col-md-4">
+              <label class="form-label small">Género</label>
+              <select name="genero" class="form-select" required>
+                <option value="Hombre">Hombre</option>
+                <option value="Mujer">Mujer</option>
+                <option value="Unisex">Unisex</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label small">URL Imagen</label>
+              <input type="url" name="imagen" class="form-control" placeholder="https://..." required>
+            </div>
+            <div class="col-12">
+              <label class="form-label small">Descripción</label>
+              <textarea name="descripcion" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR BANNER -->
+<div class="modal fade" id="modalBanner" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="{{ url_for('agregar_banner') }}" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Nuevo Banner</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label small">Título Principal</label>
+            <input type="text" name="titulo" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Subtítulo</label>
+            <input type="text" name="subtitulo" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">URL Imagen</label>
+            <input type="url" name="imagen_url" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Etiqueta opcional</label>
+            <input type="text" name="etiqueta" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Cierra automáticamente el menú móvil al tocar una pestaña
+  function closeMobileMenu() {
+    const sidebar = document.getElementById('sidebarMenu');
+    if (window.innerWidth < 768 && sidebar.classList.contains('show')) {
+      const bsCollapse = new bootstrap.Collapse(sidebar);
+      bsCollapse.hide();
+    }
+  }
+</script>
 </body>
 </html>

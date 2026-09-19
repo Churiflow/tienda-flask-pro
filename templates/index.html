@@ -165,6 +165,53 @@
                 <p class="text-muted fs-4">No se encontraron productos en esta sección.</p>
                 <a href="/" class="btn btn-primary">Ver todo el catálogo</a>
             </div>
+		
+	    <!-- Mostrar Promedio -->
+<h3>Calificación: {{ producto.promedio_calificaciones() }} ⭐ ({{ producto.resenas|length }} opiniones)</h3>
+
+<!-- Formulario para agregar reseña -->
+{% if current_user.is_authenticated %}
+<form action="{{ url_for('agregar_resena', producto_id=producto.id) }}" method="POST" class="mt-4">
+    <h4>Deja tu reseña</h4>
+    <div class="mb-3">
+        <label for="calificacion" class="form-label">Puntuación:</label>
+        <select name="calificacion" id="calificacion" class="form-select" required>
+            <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+            <option value="4">⭐⭐⭐⭐ (4/5)</option>
+            <option value="3">⭐⭐⭐ (3/5)</option>
+            <option value="2">⭐⭐ (2/5)</option>
+            <option value="1">⭐ (1/5)</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="comentario" class="form-label">Comentario:</label>
+        <textarea name="comentario" id="comentario" class="form-control" rows="3" placeholder="¿Qué te pareció el producto?"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Publicar Reseña</button>
+</form>
+{% else %}
+<p><a href="{{ url_for('login') }}">Inicia sesión</a> para dejar una opinión sobre este producto.</p>
+{% endif %}
+
+<hr>
+
+<!-- Lista de Reseñas Existentes -->
+<h4>Opiniones de clientes</h4>
+{% for resena in producto.resenas %}
+<div class="card my-2 p-3">
+    <div class="d-flex justify-content-between">
+        <strong>{{ resena.usuario.nombre }}</strong>
+        <small class="text-muted">{{ resena.fecha.strftime('%d/%m/%Y') }}</small>
+    </div>
+    <div>
+        {% for _ in range(resena.calificacion) %}⭐{% endfor %}
+    </div>
+    <p class="mt-2 mb-0">{{ resena.comentario }}</p>
+</div>
+{% else %}
+<p class="text-muted">Aún no hay reseñas para este producto. ¡Sé el primero en opinar!</p>
+{% endfor %}
+
             {% endfor %}
         </div>
     </div>
