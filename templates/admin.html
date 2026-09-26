@@ -311,29 +311,69 @@
      </div>
 </div>
 
-                <!-- Cupones -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning">
-                        <h4 class="mb-0">🎟️ Crear Cupón de Descuento</h4>
-                    </div>
-                    <div class="card-body">
-                        <form action="/admin/crear_cupon" method="POST" class="row g-3">
-                            <div class="col-md-6">
-                                <input type="text" name="codigo" class="form-control" placeholder="CÓDIGO (Ej: PROMO20)" required>
-                            </div>
-                            <div class="col-md-4">
-                                <input type="number" name="descuento" class="form-control" placeholder="% Descuento" required>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-dark w-100">Crear</button>
-                            </div>
-                        </form>
-                    </div>
+                <!-- Gestión de Cupones -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">🏷️ Crear Cupón de Descuento</h4>
+    </div>
+    <div class="card-body">
+        <form action="/admin/cupon/crear" method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Código del Cupón</label>
+                    <input type="text" name="codigo" class="form-control" placeholder="Ej: VERANO2026" required style="text-transform: uppercase;">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Descuento (%)</label>
+                    <input type="number" step="0.01" name="descuento" class="form-control" placeholder="Ej: 15" required>
                 </div>
             </div>
-        </div>
-    </div>
+            <button type="submit" class="btn btn-success w-100">Crear Cupón</button>
+        </form>
 
+        <hr class="my-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-tags me-2"></i> Cupones Activos</h5>
+
+        {% if cupones %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle bg-white text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código</th>
+                        <th>Descuento</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cupon in cupones %}
+                    <tr>
+                        <td class="fw-bold">{{ cupon.codigo }}</td>
+                        <td>{{ cupon.descuento }}%</td>
+                        <td>
+                            {% if cupon.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('eliminar_cupon', id=cupon.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este cupón?');">
+                                <i class="bi bi-trash-fill"></i> Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-light text-center border py-3 mb-0">
+            <i class="bi bi-info-circle me-2"></i> No hay cupones creados actualmente.
+        </div>
+        {% endif %}
+    </div>
+</div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

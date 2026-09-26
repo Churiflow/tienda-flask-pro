@@ -9,6 +9,7 @@ from flask import Response
 from dotenv import load_dotenv
 load_dotenv()  # Carga las variables del archivo .env
 
+
 # ==============================================================================
 # CONFIGURACIÓN INICIAL
 # ==============================================================================
@@ -78,9 +79,19 @@ class Pedido(db.Model):
     estado = db.Column(db.String(50), default='Pendiente')
     fecha = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+class Cupon(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(50), unique=True, nullable=False)
+    descuento = db.Column(db.Float, nullable=False)  # Porcentaje (ej: 15.0) o monto fijo
+    activo = db.Column(db.Boolean, default=True)
+
+    def __repr__(self):
+        return f'<Cupon {self.codigo}>'
+
 @login_manager.user_loader
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
+
 
 # ==============================================================================
 # RUTAS PÚBLICAS Y CATÁLOGO
@@ -162,57 +173,90 @@ def detalle_producto(id):
 # RUTAS DEL CARRITO DE COMPRAS
 # ==============================================================================
 
+@app.route('/quitar_cupon')
+def quitar_cupon():
+    # Eliminamos las variables del cupón de la sesión
+    session.pop('cupon_codigo', None)
+    session.pop('porcentaje_descuento', None)
+    
+    flash('El cupón de descuento fue removido.', 'info')
+    return redirect(url_for('carrito'))
+
 @app.route('/carrito')
 def carrito():
-    carrito_session = session.get('carrito', {})
+    # 1. Obtener los productos almacenados en la sesión
+    carrito_raw = session.get('carrito', [])
+    
     productos_carrito = []
-    total = 0.0
+    total = 0
 
-    for prod_id, cantidad in carrito_session.items():
-        producto = Producto.query.get(int(prod_id))
-        if producto:
-            subtotal = producto.precio * cantidad
+    # 2. Iterar asegurándonos de procesar únicamente elementos válidos
+    for p in carrito_raw:
+        if isinstance(p, dict):
+            # Obtiene el subtotal si existe, o lo calcula multiplicando precio x cantidad
+            precio = p.get('precio_unitario', p.get('precio', 0))
+            cantidad = p.get('cantidad', 1)
+            subtotal = p.get('subtotal', precio * cantidad)
+            
             total += subtotal
-            productos_carrito.append({
-                'id': producto.id,
-                'nombre': producto.nombre,
-                'precio_unitario': producto.precio,
-                'imagen': producto.imagen,
-                'cantidad': cantidad,
-                'subtotal': subtotal
-            })
+            productos_carrito.append(p)
 
+    # 3. Leer la información del cupón aplicado desde la sesión
+    cupon_codigo = session.get('cupon_codigo', None)
     descuento_pct = session.get('porcentaje_descuento', 0)
+
+    # 4. Calcular el descuento en dinero y el total final
     ahorro = total * (descuento_pct / 100.0)
     total_final = max(0.0, total - ahorro)
 
     return render_template(
-        'carrito.html', 
-        productos=productos_carrito, 
-        total=total, 
-        ahorro=ahorro, 
-        total_final=total_final
+        'carrito.html',
+        productos=productos_carrito,
+        total=total,
+        ahorro=ahorro,
+        total_final=total_final,
+        descuento_pct=descuento_pct,
+        cupon_codigo=cupon_codigo
     )
 
-@app.route('/agregar/<int:producto_id>')
+@app.route('/agregar_al_carrito/<int:producto_id>')
 def agregar_al_carrito(producto_id):
-    producto = db.session.get(Producto, producto_id)
-    if not producto:
-        flash('El producto no existe', 'danger')
-        return redirect(url_for('index'))
+    # 1. Obtener el carrito de la sesión
+    carrito = session.get('carrito', [])
     
-    if 'carrito' not in session:
-        session['carrito'] = {}
+    # Si la sesión tenía guardado un diccionario de una versión anterior, lo convertimos a lista
+    if not isinstance(carrito, list):
+        carrito = []
+    
+    # 2. Obtener el producto desde la base de datos
+    producto = Producto.query.get(producto_id)
+    
+    if producto:
+        encontrado = False
+        for item in carrito:
+            if isinstance(item, dict) and item.get('id') == producto_id:
+                item['cantidad'] += 1
+                item['subtotal'] = item['cantidad'] * item['precio_unitario']
+                encontrado = True
+                break
         
-    carrito = session['carrito']
-    str_id = str(producto_id)
-    
-    carrito[str_id] = carrito.get(str_id, 0) + 1
-    session.modified = True
-    
-    flash(f'¡{producto.nombre} agregado al carrito!', 'success')
-    return redirect(request.referrer or url_for('index'))
-
+        if not encontrado:
+            precio = producto.precio
+            nuevo_item = {
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'precio_unitario': precio,
+                'cantidad': 1,
+                'subtotal': precio,
+                'imagen': producto.imagen or ''
+            }
+            carrito.append(nuevo_item)
+            
+        session['carrito'] = carrito
+        session.modified = True
+        flash(f"¡{producto.nombre} añadido al carrito!", "success")
+        
+    return redirect(url_for('carrito'))
 
 @app.route('/quitar_del_carrito/<int:id>')
 def quitar_del_carrito(id):
@@ -233,16 +277,30 @@ def vaciar_carrito():
     flash('Carrito vaciado con éxito.', 'info')
     return redirect(url_for('carrito'))
 
+
 @app.route('/aplicar_cupon', methods=['POST'])
 def aplicar_cupon():
+    # Toma cualquier texto ingresado, elimina espacios extra y lo pasa a mayúsculas
     codigo = request.form.get('codigo_cupon', '').strip().upper()
-    cupones_validos = {'PROMO10': 10, 'DESCUENTO20': 20, 'MASTER30': 30}
     
-    if codigo in cupones_validos:
-        session['porcentaje_descuento'] = cupones_validos[codigo]
-        flash(f'¡Cupón aplicado! Obtuviste un {cupones_validos[codigo]}% de descuento.', 'success')
+    if not codigo:
+        flash('Por favor ingresa un código de descuento.', 'warning')
+        return redirect(url_for('carrito'))
+
+    # Busca en la base de datos si existe un cupón activo con el nombre exacto ingresado
+    cupon = Cupon.query.filter_by(codigo=codigo, activo=True).first()
+    
+    if cupon:
+        # Guarda el código y el porcentaje configurado en la base de datos
+        session['cupon_codigo'] = cupon.codigo
+        session['porcentaje_descuento'] = cupon.descuento
+        flash(f'¡Cupón "{cupon.codigo}" aplicado con éxito ({cupon.descuento}% de descuento)!', 'success')
     else:
+        # Si no existe en la base de datos, limpia cualquier cupón anterior
+        session.pop('cupon_codigo', None)
+        session.pop('porcentaje_descuento', None)
         flash('Código de descuento inválido o expirado.', 'danger')
+
     return redirect(url_for('carrito'))
 
 # ==============================================================================
@@ -251,7 +309,7 @@ def aplicar_cupon():
 
 @app.route('/procesar_pago_mercadopago', methods=['POST'])
 def procesar_pago_mercadopago():
-    carrito_session = session.get('carrito', {})
+    carrito_session = session.get('carrito', [])
     if not carrito_session:
         flash('Tu carrito está vacío.', 'warning')
         return redirect(url_for('carrito'))
@@ -262,11 +320,17 @@ def procesar_pago_mercadopago():
     # Construcción de lista de productos para el historial
     nombres_prods = []
     total = 0.0
-    for prod_id, cant in carrito_session.items():
-        p = Producto.query.get(int(prod_id))
-        if p:
-            nombres_prods.append(f"{p.nombre} (x{cant})")
-            total += p.precio * cant
+
+    # ⬇️ ÚNICO CAMBIO: Recorremos los elementos de la lista en lugar de usar .items()
+    for item in carrito_session:
+        if isinstance(item, dict):
+            prod_id = item.get('id')
+            cant = item.get('cantidad', 1)
+            
+            p = Producto.query.get(int(prod_id))
+            if p:
+                nombres_prods.append(f"{p.nombre} (x{cant})")
+                total += p.precio * cant
 
     descuento_pct = session.get('porcentaje_descuento', 0)
     total_final = max(0.0, total * (1 - descuento_pct / 100.0))
@@ -285,6 +349,7 @@ def procesar_pago_mercadopago():
     # Limpiar Carrito de la Sesión
     session.pop('carrito', None)
     session.pop('porcentaje_descuento', None)
+    session.pop('cupon_codigo', None)
 
     msg_wa = f"Hola, acabo de realizar la compra #{nuevo_pedido.id} por un total de ${total_final:,.0f}."
     
@@ -345,14 +410,16 @@ def admin():
     pedidos = Pedido.query.order_by(Pedido.fecha.desc()).all()
     productos = Producto.query.all()
     banners = Banner.query.all()
+    cupones = Cupon.query.all()  # <--- AGREGAR ESTA LÍNEA
     recaudacion = sum(p.total for p in pedidos if p.total)
-    
+ 
     # ✅ CORRECTO: Todas las variables dentro del paréntesis de render_template
     return render_template(
         'admin.html', 
         pedidos=pedidos, 
         productos=productos, 
-        banners=banners, 
+        banners=banners,
+        cupones=cupones,         # <--- ENVIAR A LA PLANTILLA
         recaudacion=recaudacion
     )
 
@@ -498,6 +565,44 @@ def eliminar_banner(id):
     flash('Banner eliminado correctamente', 'warning')
     return redirect(url_for('admin'))
 
+
+
+# Ruta para procesar la creación del cupón
+@app.route('/admin/cupon/crear', methods=['POST'])
+@login_required
+def crear_cupon():
+    codigo = request.form.get('codigo', '').strip().upper()
+    try:
+        descuento = float(request.form.get('descuento', 0))
+    except ValueError:
+        descuento = 0.0
+
+    if not codigo or descuento <= 0:
+        flash('Código o porcentaje de descuento inválido.', 'danger')
+        return redirect(url_for('admin'))
+
+    # Verificar si ya existe un cupón con el mismo código
+    cupon_existente = Cupon.query.filter_by(codigo=codigo).first()
+    if cupon_existente:
+        flash('Ya existe un cupón con ese código.', 'warning')
+        return redirect(url_for('admin'))
+
+    nuevo_cupon = Cupon(codigo=codigo, descuento=descuento, activo=True)
+    db.session.add(nuevo_cupon)
+    db.session.commit()
+
+    flash(f'Cupón "{codigo}" creado exitosamente.', 'success')
+    return redirect(url_for('admin'))
+
+# Ruta opcional para eliminar cupón
+@app.route('/admin/cupon/eliminar/<int:id>')
+@login_required
+def eliminar_cupon(id):
+    cupon = Cupon.query.get_or_404(id)
+    db.session.delete(cupon)
+    db.session.commit()
+    flash('Cupón eliminado correctamente.', 'success')
+    return redirect(url_for('admin'))
 
 
 if __name__ == '__main__':
