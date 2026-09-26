@@ -1,86 +1,138 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seguimiento de Pedido - TiendaMaster</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <style>
-    body {
-      background-color: #f8f9fa;
-      min-height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Pedido - TiendaMaster</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    .tracking-card {
-      max-width: 450px;
-      width: 100%;
-      border-radius: 16px;
-    }
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
 
-    /* Previene el zoom automático molesto en teclados de celulares */
-    .form-control {
-      font-size: 16px !important;
-    }
+        .tracking-card {
+            max-width: 500px;
+            border-radius: 16px;
+        }
 
-    @media (max-width: 575.98px) {
-      .tracking-card {
-        padding: 1.5rem !important;
-      }
-    }
-  </style>
+        /* Indicadores de Estado Visual */
+        .status-badge {
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+    </style>
 </head>
-<body class="d-flex align-items-center justify-content-center py-4 py-md-5">
 
-  <div class="container px-3">
-    <div class="card tracking-card shadow-lg border-0 p-4 mx-auto text-center">
-      
-      <div class="mb-3">
-        <h2 class="fw-bold mb-1 fs-3">📦 Mi Pedido</h2>
-        <p class="text-muted small mb-0">Consulta el estado de tu compra en tiempo real</p>
-      </div>
+<body class="d-flex align-items-center py-4">
 
-      <!-- FORMULARIO DE BÚSQUEDA -->
-      <form method="POST" action="/rastreo" class="mb-4">
-        <div class="input-group">
-          <input type="number" name="pedido_id" class="form-control form-control-lg" placeholder="ID del pedido (ej: 1)" required min="1" autocomplete="off">
-          <button class="btn btn-primary px-3" type="submit" aria-label="Buscar pedido">
-            <i class="bi bi-search"></i>
-          </button>
+    <div class="container">
+        <div class="card tracking-card shadow-lg border-0 p-4 mx-auto bg-white">
+            
+            <!-- Encabezado -->
+            <div class="text-center mb-4">
+                <div class="fs-1 text-primary mb-1">
+                    <i class="bi bi-box-seam-fill"></i>
+                </div>
+                <h3 class="fw-bold mb-1">Mi Pedido</h3>
+                <p class="text-muted small">Consulta el estado de tu compra en tiempo real</p>
+            </div>
+
+            <!-- Formulario de Búsqueda -->
+            <form method="POST" action="/rastreo" class="mb-4" id="trackingForm">
+                <div class="input-group">
+                    <input type="number" name="pedido_id" class="form-control form-control-lg fs-6" placeholder="Número de pedido (ej: 1024)" required min="1">
+                    <button class="btn btn-primary px-3" type="submit" id="btnSearch">
+                        <i class="bi bi-search me-1"></i> Buscar
+                    </button>
+                </div>
+            </form>
+
+            <!-- Mensajes Flash de Flask -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show small text-center border-0 mb-3" role="alert">
+                    <i class="bi bi-info-circle-fill me-1"></i> {{ message }}
+                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <!-- Resultado del Pedido -->
+            {% if pedido %}
+                <div class="card border-0 bg-light p-3 mb-3 text-start rounded-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-dark">Pedido #{{ pedido.id }}</span>
+                        <span class="badge status-badge px-3 py-2 
+                            {% if pedido.estado in ['Completado', 'Entregado', 'Enviado'] %}
+                                bg-success-subtle text-success border border-success
+                            {% elif pedido.estado in ['Pendiente', 'En preparación'] %}
+                                bg-warning-subtle text-warning-emphasis border border-warning
+                            {% else %}
+                                bg-secondary-subtle text-secondary border border-secondary
+                            {% endif %}">
+                            {{ pedido.estado }}
+                        </span>
+                    </div>
+
+                    <p class="mb-1 small text-muted">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        <strong>Fecha:</strong> 
+                        {% if pedido.fecha is string %}
+                            {{ pedido.fecha }}
+                        {% else %}
+                            {{ pedido.fecha.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
+                    </p>
+
+                    {% if pedido.nombre_cliente %}
+                    <p class="mb-0 small text-muted">
+                        <i class="bi bi-person me-1"></i>
+                        <strong>Cliente:</strong> {{ pedido.nombre_cliente }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Detalle de Productos -->
+                <div class="text-start bg-white p-3 border rounded-3 mb-3">
+                    <p class="small text-muted fw-bold mb-1"><i class="bi bi-bag-check me-1"></i>Productos asignados:</p>
+                    <p class="mb-0 small text-dark" style="white-space: pre-line;">{{ pedido.productos_nombres }}</p>
+                </div>
+
+            {% elif error %}
+                <div class="alert alert-danger border-0 text-center small py-3 rounded-3 mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ error }}
+                </div>
+            {% endif %}
+
+            <hr class="my-3 opacity-25">
+
+            <div class="text-center">
+                <a href="/" class="text-decoration-none text-muted small fw-semibold">
+                    <i class="bi bi-arrow-left me-1"></i> Volver a la tienda
+                </a>
+            </div>
+
         </div>
-      </form>
-
-      <!-- RESULTADO DEL PEDIDO -->
-      {% if pedido %}
-        <div class="alert {% if pedido.estado == 'Pendiente' %}alert-warning{% else %}alert-success{% endif %} border-0 shadow-sm py-3 px-3 rounded-3 mb-3">
-          <h6 class="mb-1 fw-bold text-muted small">Pedido #{{ pedido.id }}</h6>
-          <div class="fs-4 fw-bold text-uppercase my-1">{{ pedido.estado }}</div>
-          <p class="mb-0 small text-muted">
-            <i class="bi bi-calendar-event me-1"></i>
-            Fecha: {{ pedido.fecha.strftime('%d/%m/%Y %H:%M') if pedido.fecha and pedido.fecha.strftime else pedido.fecha }}
-          </p>
-        </div>
-
-        <div class="bg-light p-3 rounded-3 text-start mb-2">
-          <p class="small text-muted mb-1 fw-bold text-uppercase">Productos:</p>
-          <p class="small text-dark mb-0 text-break">{{ pedido.productos_nombres }}</p>
-        </div>
-
-      {% elif error %}
-        <div class="alert alert-danger border-0 small py-2 rounded-3 mb-3">
-          <i class="bi bi-exclamation-circle me-1"></i> {{ error }}
-        </div>
-      {% endif %}
-
-      <hr class="my-3 opacity-25">
-
-      <a href="/" class="btn btn-link text-decoration-none text-secondary small p-0">
-        <i class="bi bi-arrow-left me-1"></i> Volver a la tienda
-      </a>
-
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Efecto de carga en el botón de búsqueda
+        document.getElementById('trackingForm').addEventListener('submit', function () {
+            const btn = document.getElementById('btnSearch');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        });
+    </script>
 </body>
+
 </html>

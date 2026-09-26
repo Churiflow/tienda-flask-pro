@@ -1,131 +1,102 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <!-- Viewport clave para que el celular no se aleje -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Boleta #{{ pedido.id }}</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boleta #{{ pedido.id }}</title>
+    <style>
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            width: 320px; 
+            margin: 20px auto; 
+            border: 1px dashed #333; 
+            padding: 20px; 
+            background-color: #fff;
+            color: #000;
+        }
 
-    body {
-      font-family: 'Courier New', Courier, monospace;
-      background-color: #f4f4f4;
-      margin: 0;
-      padding: 15px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-    }
+        .text-center { text-align: center; }
+        .divider { border-top: 1px dashed #000; margin: 12px 0; }
+        .total { font-weight: bold; font-size: 1.2em; }
+        
+        .btn-print {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            text-decoration: none;
+            display: inline-block;
+        }
 
-    .boleta-card {
-      background-color: #fff;
-      width: 100%;
-      max-width: 340px; /* Ancho idóneo estilo boleta térmica */
-      border: 1px dashed #bbb;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-    }
+        .btn-print:hover {
+            background-color: #0b5ed7;
+        }
 
-    .text-center { text-align: center; }
-    
-    h2 {
-      margin: 0 0 5px 0;
-      font-size: 1.3rem;
-    }
+        .link-back {
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.85em;
+        }
 
-    p {
-      margin: 6px 0;
-      word-wrap: break-word;
-      font-size: 0.95rem;
-    }
-
-    .divider {
-      border-top: 1px dashed #000;
-      margin: 12px 0;
-    }
-
-    .total {
-      font-weight: bold;
-      font-size: 1.15em;
-    }
-
-    .btn-action {
-      display: inline-block;
-      width: 100%;
-      padding: 10px;
-      margin-top: 8px;
-      background-color: #212529;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      text-decoration: none;
-      box-sizing: border-box;
-    }
-
-    .btn-link {
-      display: inline-block;
-      margin-top: 10px;
-      color: #555;
-      text-decoration: underline;
-      font-size: 0.85rem;
-    }
-
-    /* Ocultar elementos en la impresión de papel */
-    @media print {
-      body {
-        background-color: #fff;
-        padding: 0;
-      }
-      .boleta-card {
-        border: none;
-        box-shadow: none;
-        max-width: 100%;
-        width: 100%;
-        padding: 0;
-      }
-      .no-print {
-        display: none !important;
-      }
-    }
-  </style>
+        @media print { 
+            body { 
+                border: none; 
+                width: 100%; 
+                margin: 0; 
+                padding: 0; 
+            } 
+            .no-print { 
+                display: none !important; 
+            } 
+        }
+    </style>
 </head>
+
 <body>
 
-  <div class="boleta-card">
     <div class="text-center">
-      <h2>MI TIENDA PRO</h2>
-      <p>Venta Online</p>
+        <h2 style="margin: 0 0 5px 0;">MI TIENDA PRO</h2>
+        <p style="margin: 0;">Venta Online</p>
     </div>
 
     <div class="divider"></div>
 
-    <p><strong>Pedido:</strong> #{{ pedido.id }}</p>
-    <p><strong>Fecha:</strong> {{ pedido.fecha.strftime('%d/%m/%Y %H:%M') if pedido.fecha else 'N/A' }}</p>
-    <p><strong>Cliente:</strong> {{ pedido.nombre_cliente }}</p>
+    <p style="margin: 4px 0;"><strong>Pedido:</strong> #{{ pedido.id }}</p>
+    <p style="margin: 4px 0;">
+        <strong>Fecha:</strong> 
+        {% if pedido.fecha is string %}
+            {{ pedido.fecha }}
+        {% else %}
+            {{ pedido.fecha.strftime('%d/%m/%Y %H:%M') }}
+        {% endif %}
+    </p>
+    <p style="margin: 4px 0;"><strong>Cliente:</strong> {{ pedido.nombre_cliente }}</p>
 
     <div class="divider"></div>
 
-    <p><strong>Productos:</strong><br>{{ pedido.productos_nombres }}</p>
+    <p style="margin: 4px 0;"><strong>Productos:</strong></p>
+    <p style="margin: 4px 0; white-space: pre-line;">{{ pedido.productos_nombres }}</p>
 
     <div class="divider"></div>
 
-    <p class="total text-center">TOTAL PAGADO: ${{ pedido.total_pagado }}</p>
+    <p class="total text-center" style="margin: 8px 0;">
+        TOTAL PAGADO: ${{ "{:,.0f}".format(pedido.total_pagado) if pedido.total_pagado is number else pedido.total_pagado }}
+    </p>
 
     <div class="divider"></div>
 
-    <p class="text-center">¡Gracias por su compra!</p>
-    
-    <div class="no-print text-center" style="margin-top: 15px;">
-      <button class="btn-action" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-      <a href="/admin" class="btn-link">Volver al Panel de Admin</a>
+    <p class="text-center" style="margin: 8px 0;">¡Gracias por su compra!</p>
+
+    <div class="no-print text-center" style="margin-top: 20px;">
+        <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        <br><br>
+        <a href="/admin" class="link-back">← Volver al Panel de Administración</a>
     </div>
-  </div>
 
 </body>
+
 </html>

@@ -115,3 +115,127 @@
 [2026-09-18 22:34:49] [INFO] 127.0.0.1 - - [18/Sep/2026 22:34:49] "GET /imprimir_boleta/1 HTTP/1.1" 200 -
 [2026-09-18 22:34:56] [INFO] 127.0.0.1 - - [18/Sep/2026 22:34:56] "GET /admin HTTP/1.1" 200 -
 [2026-09-18 22:35:05] [INFO] 127.0.0.1 - - [18/Sep/2026 22:35:05] "GET / HTTP/1.1" 200 -
+[2026-09-19 00:33:48] [INFO] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+[2026-09-19 00:33:48] [INFO] Press CTRL+C to quit
+[2026-09-19 00:33:48] [INFO]  * Restarting with stat
+[2026-09-19 00:33:49] [WARNING]  * Debugger is active!
+[2026-09-19 00:33:49] [INFO]  * Debugger PIN: 204-391-160
+[2026-09-19 00:33:54] [INFO] 127.0.0.1 - - [19/Sep/2026 00:33:54] "GET /admin HTTP/1.1" 302 -
+[2026-09-19 00:33:54] [INFO] 127.0.0.1 - - [19/Sep/2026 00:33:54] "GET /login HTTP/1.1" 200 -
+[2026-09-19 00:34:00] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:00] "POST /login HTTP/1.1" 500 -
+[2026-09-19 00:34:00] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:00] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+[2026-09-19 00:34:00] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:00] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+[2026-09-19 00:34:00] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:00] "GET /login?__debugger__=yes&cmd=resource&f=console.png&s=2xxKd8geBZ4exFzT7U71 HTTP/1.1" 200 -
+[2026-09-19 00:34:00] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:00] "GET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+[2026-09-19 00:34:07] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:07] "GET / HTTP/1.1" 500 -
+[2026-09-19 00:34:07] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:07] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 00:34:07] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:07] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 00:34:07] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:07] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=2xxKd8geBZ4exFzT7U71 HTTP/1.1" 200 -
+[2026-09-19 00:34:07] [INFO] 127.0.0.1 - - [19/Sep/2026 00:34:07] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:27:25] [INFO] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+[2026-09-19 01:27:25] [INFO] Press CTRL+C to quit
+[2026-09-19 01:27:25] [INFO]  * Restarting with stat
+[2026-09-19 01:27:26] [WARNING]  * Debugger is active!
+[2026-09-19 01:27:26] [INFO]  * Debugger PIN: 204-391-160
+[2026-09-19 01:27:32] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:32] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:27:32] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:32] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:27:32] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:32] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:27:32] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:32] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=pLQhc6aWr3z1qm61BcuG HTTP/1.1" 200 -
+[2026-09-19 01:27:32] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:32] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:27:33] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:33] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:27:33] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:33] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:27:33] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:33] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:27:33] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:33] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=pLQhc6aWr3z1qm61BcuG HTTP/1.1" 304 -
+[2026-09-19 01:27:33] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:33] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:27:39] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:39] "GET /carrito HTTP/1.1" 200 -
+[2026-09-19 01:27:41] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:41] "GET /carrito HTTP/1.1" 200 -
+[2026-09-19 01:27:46] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:46] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:27:46] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:46] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:27:46] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:46] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:27:46] [INFO] 127.0.0.1 - - [19/Sep/2026 01:27:46] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=pLQhc6aWr3z1qm61BcuG HTTP/1.1" 304 -
+[2026-09-19 01:36:40] [INFO] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+[2026-09-19 01:36:40] [INFO] Press CTRL+C to quit
+[2026-09-19 01:36:40] [INFO]  * Restarting with stat
+[2026-09-19 01:36:41] [WARNING]  * Debugger is active!
+[2026-09-19 01:36:41] [INFO]  * Debugger PIN: 204-391-160
+[2026-09-19 01:36:46] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:46] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=qolxA1tZACHw7QMQH3eQ HTTP/1.1" 200 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:36:47] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:47] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=qolxA1tZACHw7QMQH3eQ HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=qolxA1tZACHw7QMQH3eQ HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=qolxA1tZACHw7QMQH3eQ HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=qolxA1tZACHw7QMQH3eQ HTTP/1.1" 304 -
+[2026-09-19 01:36:48] [INFO] 127.0.0.1 - - [19/Sep/2026 01:36:48] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:36:59] [INFO] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+[2026-09-19 01:36:59] [INFO] Press CTRL+C to quit
+[2026-09-19 01:36:59] [INFO]  * Restarting with stat
+[2026-09-19 01:37:00] [WARNING]  * Debugger is active!
+[2026-09-19 01:37:00] [INFO]  * Debugger PIN: 204-391-160
+[2026-09-19 01:37:50] [INFO] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+[2026-09-19 01:37:50] [INFO] Press CTRL+C to quit
+[2026-09-19 01:37:50] [INFO]  * Restarting with stat
+[2026-09-19 01:37:51] [WARNING]  * Debugger is active!
+[2026-09-19 01:37:51] [INFO]  * Debugger PIN: 204-391-160
+[2026-09-19 01:37:57] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:57] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:37:57] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:57] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:37:57] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:57] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:37:57] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:57] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 200 -
+[2026-09-19 01:37:57] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:57] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:37:58] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:58] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:37:59] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:59] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:37:59] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:59] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:37:59] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:59] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:37:59] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:59] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:37:59] [INFO] 127.0.0.1 - - [19/Sep/2026 01:37:59] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
+[2026-09-19 01:38:17] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:17] "GET /admin HTTP/1.1" 302 -
+[2026-09-19 01:38:17] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:17] "GET /login HTTP/1.1" 200 -
+[2026-09-19 01:38:22] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:22] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:38:22] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:22] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:38:22] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:22] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:38:22] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:22] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:38:35] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:35] "GET / HTTP/1.1" 500 -
+[2026-09-19 01:38:35] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:35] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+[2026-09-19 01:38:35] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:35] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+[2026-09-19 01:38:36] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:36] "GET /?__debugger__=yes&cmd=resource&f=console.png&s=st1P0m8x9hjaufixIpry HTTP/1.1" 304 -
+[2026-09-19 01:38:36] [INFO] 127.0.0.1 - - [19/Sep/2026 01:38:36] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 304 -
