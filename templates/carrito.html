@@ -81,7 +81,7 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ url_for('quitar_del_carrito', id=p.id) }}" class="btn btn-outline-danger" title="Restar 1">
+                                            <a href="{{ url_for('restar_del_carrito', producto_id=p.id) }}" class="btn btn-outline-danger" title="Restar 1">
                                                 <i class="bi bi-dash"></i>
                                             </a>
                                             <a href="{{ url_for('agregar_al_carrito', producto_id=p.id) }}" class="btn btn-outline-success" title="Añadir 1">

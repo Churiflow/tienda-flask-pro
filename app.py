@@ -100,13 +100,107 @@ def load_user(user_id):
 @app.route('/')
 def index():
     productos = Producto.query.all()
-    banners = Banner.query.all()  # <--- Consulta todos los banners creados
-    # Calcular cantidad total de productos en el carrito para la vista
-    carrito_session = session.get('carrito', {})
-    cantidad = sum(carrito_session.values()) if isinstance(carrito_session, dict) else 0
+    banners = Banner.query.all()  # Consulta todos los banners creados
     
-    return render_template('index.html', productos=productos,banners=banners, cantidad=cantidad)
+    carrito_session = session.get('carrito', [])
+    
+    # Mapeo para saber cuántas unidades de cada producto están en el carrito actual
+    reservados = {}
+    cantidad = 0
 
+    if isinstance(carrito_session, list):
+        for item in carrito_session:
+            if isinstance(item, dict):
+                p_id = item.get('id')
+                cant = item.get('cantidad', 1)
+                reservados[p_id] = reservados.get(p_id, 0) + cant
+                cantidad += cant
+    elif isinstance(carrito_session, dict):
+        cantidad = sum(carrito_session.values())
+        reservados = carrito_session
+
+    # Descontar visualmente del stock las unidades guardadas en la sesión
+    for producto in productos:
+        en_carrito = reservados.get(producto.id, 0)
+        producto.stock = max(0, producto.stock - en_carrito)
+
+    return render_template('index.html', productos=productos, banners=banners, cantidad=cantidad)
+
+
+@app.route('/agregar_al_carrito/<int:producto_id>')
+def agregar_al_carrito(producto_id):
+    # 1. Obtener el carrito de la sesión
+    carrito = session.get('carrito', [])
+    
+    # Si la sesión tenía guardado un diccionario de una versión anterior, lo convertimos a lista
+    if not isinstance(carrito, list):
+        carrito = []
+    
+    # 2. Obtener el producto desde la base de datos
+    producto = Producto.query.get(producto_id)
+    
+    if producto:
+        encontrado = False
+        cant_en_carrito = 0
+
+        # Buscar si ya está en el carrito y contar sus unidades
+        for item in carrito:
+            if isinstance(item, dict) and item.get('id') == producto_id:
+                cant_en_carrito = item.get('cantidad', 0)
+                # Validar control de stock real
+                if cant_en_carrito >= producto.stock:
+                    flash(f"¡Atención! No hay más stock disponible de {producto.nombre}.", "warning")
+                    return redirect(request.referrer or url_for('index'))
+                
+                item['cantidad'] += 1
+                item['subtotal'] = item['cantidad'] * item['precio_unitario']
+                encontrado = True
+                break
+        
+        if not encontrado:
+            if producto.stock <= 0:
+                flash(f"¡Atención! No hay stock disponible de {producto.nombre}.", "warning")
+                return redirect(request.referrer or url_for('index'))
+
+            precio = producto.precio
+            nuevo_item = {
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'precio_unitario': precio,
+                'cantidad': 1,
+                'subtotal': precio,
+                'imagen': producto.imagen or ''
+            }
+            carrito.append(nuevo_item)
+            
+        session['carrito'] = carrito
+        session.modified = True
+        flash(f"¡{producto.nombre} añadido al carrito!", "success")
+        
+    # PERMANECE EN LA PÁGINA ACTUAL EN LUGAR DE REDIRIGIR AL CARRITO
+    return redirect(request.referrer or url_for('index'))
+
+@app.route('/restar_del_carrito/<int:producto_id>')
+def restar_del_carrito(producto_id):
+    carrito = session.get('carrito', [])
+    
+    if isinstance(carrito, list):
+        for item in carrito:
+            if isinstance(item, dict) and item.get('id') == producto_id:
+                item['cantidad'] -= 1
+                
+                # Si llega a 0 o menos, quitamos el producto del carrito
+                if item['cantidad'] <= 0:
+                    carrito.remove(item)
+                else:
+                    # Recalculamos el subtotal respetando tu clave 'precio_unitario'
+                    item['subtotal'] = item['cantidad'] * item.get('precio_unitario', 0)
+                break
+                
+        session['carrito'] = carrito
+        session.modified = True
+
+    return redirect(url_for('carrito'))
 
 @app.route('/agregar_producto', methods=['POST'])
 @login_required
@@ -219,57 +313,6 @@ def carrito():
         cupon_codigo=cupon_codigo
     )
 
-@app.route('/agregar_al_carrito/<int:producto_id>')
-def agregar_al_carrito(producto_id):
-    # 1. Obtener el carrito de la sesión
-    carrito = session.get('carrito', [])
-    
-    # Si la sesión tenía guardado un diccionario de una versión anterior, lo convertimos a lista
-    if not isinstance(carrito, list):
-        carrito = []
-    
-    # 2. Obtener el producto desde la base de datos
-    producto = Producto.query.get(producto_id)
-    
-    if producto:
-        encontrado = False
-        for item in carrito:
-            if isinstance(item, dict) and item.get('id') == producto_id:
-                item['cantidad'] += 1
-                item['subtotal'] = item['cantidad'] * item['precio_unitario']
-                encontrado = True
-                break
-        
-        if not encontrado:
-            precio = producto.precio
-            nuevo_item = {
-                'id': producto.id,
-                'nombre': producto.nombre,
-                'precio_unitario': precio,
-                'cantidad': 1,
-                'subtotal': precio,
-                'imagen': producto.imagen or ''
-            }
-            carrito.append(nuevo_item)
-            
-        session['carrito'] = carrito
-        session.modified = True
-        flash(f"¡{producto.nombre} añadido al carrito!", "success")
-        
-    return redirect(url_for('carrito'))
-
-@app.route('/quitar_del_carrito/<int:id>')
-def quitar_del_carrito(id):
-    carrito_session = session.get('carrito', {})
-    str_id = str(id)
-    if str_id in carrito_session:
-        carrito_session[str_id] -= 1
-        if carrito_session[str_id] <= 0:
-            del carrito_session[str_id]
-        session['carrito'] = carrito_session
-        flash('Cantidad actualizada en el carrito.', 'info')
-    return redirect(url_for('carrito'))
-
 @app.route('/vaciar')
 def vaciar_carrito():
     session.pop('carrito', None)
@@ -306,7 +349,6 @@ def aplicar_cupon():
 # ==============================================================================
 # RUTAS DE PAGO Y RASTREO
 # ==============================================================================
-
 @app.route('/procesar_pago_mercadopago', methods=['POST'])
 def procesar_pago_mercadopago():
     carrito_session = session.get('carrito', [])
@@ -321,7 +363,6 @@ def procesar_pago_mercadopago():
     nombres_prods = []
     total = 0.0
 
-    # ⬇️ ÚNICO CAMBIO: Recorremos los elementos de la lista en lugar de usar .items()
     for item in carrito_session:
         if isinstance(item, dict):
             prod_id = item.get('id')
@@ -331,6 +372,10 @@ def procesar_pago_mercadopago():
             if p:
                 nombres_prods.append(f"{p.nombre} (x{cant})")
                 total += p.precio * cant
+                
+                # DISMINUIR STOCK REAL EN LA BASE DE DATOS
+                if getattr(p, 'stock', None) is not None:
+                    p.stock = max(0, p.stock - cant)
 
     descuento_pct = session.get('porcentaje_descuento', 0)
     total_final = max(0.0, total * (1 - descuento_pct / 100.0))
@@ -361,6 +406,7 @@ def procesar_pago_mercadopago():
         mensaje=msg_wa,
         fecha=nuevo_pedido.fecha.strftime('%d/%m/%Y %H:%M')
     )
+
 
 @app.route('/rastreo', methods=['GET', 'POST'])
 def rastreo():
@@ -604,6 +650,26 @@ def eliminar_cupon(id):
     flash('Cupón eliminado correctamente.', 'success')
     return redirect(url_for('admin'))
 
+@app.route('/disminuir_del_carrito/<int:producto_id>')
+def disminuir_del_carrito(producto_id):
+    carrito = session.get('carrito', [])
+    
+    if isinstance(carrito, list):
+        for item in carrito:
+            if isinstance(item, dict) and item.get('id') == producto_id:
+                item['cantidad'] -= 1
+                # Si llega a 0 o menos, lo eliminamos de la lista
+                if item['cantidad'] <= 0:
+                    carrito.remove(item)
+                else:
+                    # Actualizamos el subtotal del ítem
+                    item['subtotal'] = item['cantidad'] * item.get('precio', 0)
+                break
+        
+        session['carrito'] = carrito
+        session.modified = True
+
+    return redirect(url_for('carrito'))
 
 if __name__ == '__main__':
     with app.app_context():
