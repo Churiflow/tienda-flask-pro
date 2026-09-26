@@ -671,10 +671,10 @@ def disminuir_del_carrito(producto_id):
 
     return redirect(url_for('carrito'))
 
+# 1. Esto se ejecuta SIEMPRE al iniciar la app (tanto en local como en Gunicorn/Render)
+with app.app_context():
+    db.create_all()
+
+# 2. Esto solo se ejecuta cuando corres 'python app.py' manualmente en local
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        
-    # ⬇️ app.run DEBE IR FUERA DEL CONTEXTO ⬇️
     app.run(debug=True)
-    
