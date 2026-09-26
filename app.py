@@ -673,7 +673,7 @@ def disminuir_del_carrito(producto_id):
 
 if __name__ == '__main__':
     with app.app_context():
-        inicializar_bd()
+        db.create_all()
         
     # ⬇️ app.run DEBE IR FUERA DEL CONTEXTO ⬇️
     app.run(debug=True)
