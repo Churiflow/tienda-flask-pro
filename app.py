@@ -435,7 +435,9 @@ def login():
         clave_input = request.form.get('clave')
         
         user = Usuario.query.filter_by(usuario=usuario_input).first()
-        if user and user.clave == clave_input:
+        
+        # Usar check_password_hash en lugar de la comparación directa ==
+        if user and check_password_hash(user.clave, clave_input):
             login_user(user)
             flash('Has iniciado sesión correctamente.', 'success')
             return redirect(url_for('admin'))
@@ -673,22 +675,26 @@ def disminuir_del_carrito(producto_id):
     return redirect(url_for('carrito'))
 
 # 1. Esto se ejecuta SIEMPRE al iniciar la app (tanto en local como en Gunicorn/Render)
+
 with app.app_context():
     db.create_all()
     
-    # 1. Buscar usando la columna 'usuario'
     admin_user = Usuario.query.filter_by(usuario='admin').first()
-    
     if not admin_user:
         nuevo_admin = Usuario(
             usuario='admin',
-            clave=generate_password_hash('admin123'),  # O usa 'admin123' directo si no usas hash en el login
+            clave=generate_password_hash('admin123'),
             es_admin=True
         )
         db.session.add(nuevo_admin)
         db.session.commit()
-        print("✅ Usuario admin creado exitosamente.")
-    
+        print("✅ Usuario admin creado con clave en hash.")
+    else:
+        # Asegura que la clave existente en la BD se actualice al nuevo hash
+        admin_user.clave = generate_password_hash('admin123')
+        db.session.commit()
+        print("✅ Clave de usuario admin actualizada a hash.")
+
 # 2. Esto solo se ejecuta cuando corres 'python app.py' manualmente en local
 if __name__ == '__main__':
     app.run(debug=True)
