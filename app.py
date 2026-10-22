@@ -8,8 +8,7 @@ import io
 from flask import Response
 from dotenv import load_dotenv
 load_dotenv()  # Carga las variables del archivo .env
-from werkzeug.security import generate_password_hash
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # ==============================================================================
 # CONFIGURACIÓN INICIAL
