@@ -8,6 +8,7 @@ import io
 from flask import Response
 from dotenv import load_dotenv
 load_dotenv()  # Carga las variables del archivo .env
+from werkzeug.security import generate_password_hash
 
 
 # ==============================================================================
@@ -674,7 +675,20 @@ def disminuir_del_carrito(producto_id):
 # 1. Esto se ejecuta SIEMPRE al iniciar la app (tanto en local como en Gunicorn/Render)
 with app.app_context():
     db.create_all()
-
+    
+    # 1. Buscar usando la columna 'usuario'
+    admin_user = Usuario.query.filter_by(usuario='admin').first()
+    
+    if not admin_user:
+        nuevo_admin = Usuario(
+            usuario='admin',
+            clave=generate_password_hash('admin123'),  # O usa 'admin123' directo si no usas hash en el login
+            es_admin=True
+        )
+        db.session.add(nuevo_admin)
+        db.session.commit()
+        print("✅ Usuario admin creado exitosamente.")
+    
 # 2. Esto solo se ejecuta cuando corres 'python app.py' manualmente en local
 if __name__ == '__main__':
     app.run(debug=True)
